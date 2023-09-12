@@ -5705,7 +5705,7 @@ for (auto &elem : vec){
 
 ​	最右边的图：HashTable：哈希表（Separate Chaining实现的最好用——拉链法）
 
-## 第二讲
+## 第二讲 容器
 
 源码之前，了无秘密
 
@@ -5746,7 +5746,260 @@ ps: malloc开辟内存空间时有固定的额外开销，因此申请的空间�
 
 
 
-### 2.3 容器——结构与分类
+### 2.3 容器vector
 
-#### 2.3.1 list 链表
+#### 2.3.1 vector 存放内置数据类型
+
+```c++
+#include <iostream>
+using namespace std;
+#include <vector> //vector容器头文件，用什么容器就要引用什么容器的头文件
+#include <algorithm>//STL 中算法的头文件，记住
+
+
+void myPrint(int val) {
+	cout << val << endl;
+}
+
+//vector容器存放内置数据类型
+
+void test01() {
+	//创建一个vector容器，数组
+	vector<int> v;
+
+	//向容器中插入数据
+	v.push_back(10);
+	v.push_back(20);
+	v.push_back(30);
+
+	//通过迭代器访问容器中的数据
+
+	/*
+	//遵循左闭右开
+	vector<int>::iterator itBegin = v.begin();//起始迭代器，指向容器中第一个元素的位置
+	vector<int>::iterator itEnd = v.end();//结束迭代器 指向容器中最后一个元素的下一个位置
+
+	//第一种遍历方式
+	while (itBegin != itEnd) {
+		cout << *itBegin << endl;
+		itBegin++;
+	}
+	
+	//第二种遍历方式
+	for (vector<int>::iterator itBegin = v.begin(); itBegin != v.end(); itBegin++) {
+		cout << *itBegin << endl;
+	}
+	*/
+
+	//第三种遍历方式,利用STL中的遍历算法
+	for_each(v.begin(), v.end() , myPrint);		//底层第三个参数是Func(*p);   p是算法中当前指向的该元素的迭代器，解引用p
+}
+
+int main() {
+	test01();
+	return 0;
+}
+```
+
+
+
+#### 2.3.2 vector 存放自定义数据类型
+
+
+
+1.存放自定义数据类型；
+
+如例子中的`	vector<Person> v;`
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+using namespace std;
+
+
+class Person {
+public:
+	string m_Name;
+	int m_Age;
+
+	Person(string name,int age) {
+		m_Name = name;
+		m_Age = age;
+	}
+
+	void func() {
+		cout << "是个人就会呼吸" << endl;
+	}
+};
+
+
+//方式1 
+ostream& operator<<(ostream& cout, Person& p) {
+	cout << p.m_Name << p.m_Age;
+	p.func();
+	return cout;
+}
+
+
+//方式2
+void myPrint(Person& p) {
+	cout << p;
+}
+
+
+void test01() {
+	vector<Person> v;
+	v.push_back(Person("小明", 18));
+	v.push_back(Person("小张", 20));
+	v.push_back(Person("小秦", 22));
+
+//方式1 遍历
+	for (vector<Person>::iterator it = v.begin(); it != v.end(); it++) {
+		cout << *it;
+	}
+
+//方式2 遍历
+	for_each(v.begin(), v.end(), myPrint);
+}
+int main() {
+	test01();
+	return 0;
+}
+```
+
+
+
+2.存放指向自定义数据类型的指针(减少vector容器的空间开销，指针只有四字节大小(32位操作系统中))；
+
+如例子中的`	vector<Person> v;`
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+using namespace std;
+
+
+class Person {
+public:
+	string m_Name;
+	int m_Age;
+
+	Person(string name,int age) {
+		m_Name = name;
+		m_Age = age;
+	}
+
+	void func() {
+		cout << "是个人就会呼吸" << endl;
+	}
+};
+
+
+//方式1
+ostream& operator<<(ostream& cout, Person& p) {
+	cout << p.m_Name << p.m_Age;
+	p.func();
+	return cout;
+}
+
+
+//方式2
+void myPrint(Person* p) {
+	cout << *p;
+}
+
+
+void test01() {
+	vector<Person*> v;
+	Person p1("小秦", 22);
+	v.push_back(&p1);
+
+
+
+
+//方式1
+    //请注意：此时迭代器it是指向  指向Person数据类型的指针  的指针
+	for (vector<Person*>::iterator it = v.begin(); it != v.end(); it++) {
+		cout << **it;
+	}
+
+//方式2
+	for_each(v.begin(), v.end(), myPrint);
+}
+int main() {
+	test01();
+	return 0;
+}
+```
+
+
+
+#### 2.3.3 Vector容器嵌套容器
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+//容器嵌套容器
+
+void func2(int i) {
+	cout << i << " ";
+}
+void func1(vector<int> p) {
+	for_each(p.begin(), p.end(), func2);
+	cout << endl;
+}
+
+
+void test01() {
+	//vector容器内嵌套了一个vector容器
+	vector<vector<int>> v;
+
+	//创建小容器
+	vector<int> v1;
+	vector<int> v2;
+	vector<int> v3;
+
+	//向小容器中添加数据
+	for (int i = 0; i < 3; i++) {
+		v1.push_back(i);
+		v2.push_back(i + 3);
+		v3.push_back(i + 6);
+	}
+
+	//向大容器中添加小容器
+	v.push_back(v1);
+	v.push_back(v2);
+	v.push_back(v3);
+
+
+
+	//第一种：遍历容器v中的内容
+	for (vector<vector<int>>::iterator i = v.begin(); i < v.end(); i++) {
+		for (vector<int>::iterator j = (*i).begin(); j < (*i).end(); j++) {
+			cout << *j << " ";
+		}
+		cout << endl;
+	}
+
+
+
+	//第二种：遍历容器v中的内容
+	for_each(v.begin(), v.end(), func1);
+
+}
+
+int main() {
+	test01();
+	return 0;
+}
+```
 
