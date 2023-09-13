@@ -6089,3 +6089,414 @@ int main() {
   ​                                               //若容器变短，则末尾超出容器长度的元素被删除。
 
 注：resize()变短，容器的capacity不变，resize()变长，容器的capacity可能会变长。取决于重新指定的容器长度有没有超过当前capacity。
+
+
+
+#### 2.3.7 vector插入和删除操作
+
+功能描述：对vector容器进行插入、删除操作
+
+**函数原型：**
+
+* `push_back(ele);`                                         //尾部插入元素ele
+* `pop_back();`                                                //删除最后一个元素
+* `insert(const_iterator pos, ele);`        //迭代器指向位置pos插入元素ele
+* `insert(const_iterator pos, int count,ele);`//迭代器指向位置pos插入count个元素ele
+* `erase(const_iterator pos);`                     //删除迭代器指向的元素
+* `erase(const_iterator start, const_iterator end);`//删除迭代器从start到end之间的元素
+* `clear();`                                                        //删除容器中所有元素
+
+```c++
+vetcor<int> v1;
+v1.push_back(10);
+v1.pop_back();
+insert(v1.begin(),20);
+vector<int>::iterator i = v.begin()+1;
+v1.insert(i,10,100);//向迭代器i指向的位置后插入10个一百
+v1.erase(i);//删除i位置的元素
+v1.erase(i,v1.end());//删除从i位置到末尾位置的元素
+```
+
+#### 2.3.8 vector数据存取
+
+功能描述：对vector中的数据进行存取操作
+
+**函数原型：**
+
+* `at(int idx); `     //返回索引idx所指的数据
+* `operator[]; `       //返回索引idx所指的数据
+* `front(); `            //返回容器中第一个数据元素
+* `back();`              //返回容器中最后一个数据元素
+
+```c++
+vector<int> v1;
+v1.push_back(10);
+v1.push_back(20);
+v1.push_back(30);
+
+cout<<v1.at(1)<<endl;//输出：20
+//vector提供了对[]的重载
+cout<<v1[1]<<endl;//输出：20
+cout<<v1.front()<<endl;//输出：10 v1.fornt() == *(v1.begin())
+cout<<v1.back()<<endl;//输出：30  v1.back() == *(v1.end()-1)
+```
+
+**总结**：除了用迭代器获取vector容器中的元素，[]和at也可以
+
+
+
+#### 2.3.9 vector容器互换
+
+功能描述：实现两个容器内元素互换
+
+**函数原型：**
+
+* `swap(vec);`  // 将vec与本身的元素互换
+
+**使用场景**：巧用swap()收缩空间：
+
+如:
+
+```c++
+vector<int> v;
+for(int i=0;i<100000000;i++){
+    v.push_back(i);
+}
+v.resize(10);//此时v的容量 >= 100000000 但是有效元素只有十个
+
+vector<int>(v).swap(v);//巧妙地将v的容量减少到了10
+```
+
+底层逻辑：
+
+```
+vector<int>(v)//创建了个匿名对象，并将v里面的元素拷贝给了该匿名对象
+后面：
+.swap(V)//将匿名对象与v容器进行交换。此时匿名对象变成了一个容量>=1000000000的vector，v变成了含有十个元素并且容量为10的vector，并且由于匿名对象的特点，会在此行语句执行完系统自动回收空间，巧妙地进行了v的空间收缩。
+```
+
+#### 2.3.10 vector预留空间
+
+功能描述：减少vector在动态扩展容量时的扩展次数
+
+**函数原型**：
+
+* `reserve(int len);`//容器预留len个元素长度，预留位置不初始化，元素不可访问。
+
+如果数据量较大，可以一开始利用reserve预留空间。
+
+### 2.4 deque容器
+
+#### 2.4.1 deque容器基本概念
+
+
+
+**功能：**
+
+* 双端数组，可以对头端进行插入删除操作
+
+
+
+**deque与vector区别：**
+
+* vector对于头部的插入删除效率低，数据量越大，效率越低
+* deque相对而言，对头部的插入删除速度回比vector快
+* vector访问元素时的速度会比deque快,这和两者内部实现有关
+
+
+
+**deque内部工作原理:**
+
+deque内部有个**中控器**，维护每段缓冲区中的内容，缓冲区中存放真实数据
+
+中控器维护的是每个缓冲区的地址，使得使用deque时像一片连续的内存空间
+
+![image](/images/clip_image002-1547547896341.jpg)
+
+#### 2.4.2 deque构造函数
+
+**功能描述：**
+
+* deque容器构造
+
+**函数原型：**
+
+* `deque<T>` deqT;                      //默认构造形式
+* `deque(beg, end);`                  //构造函数将[beg, end)区间中的元素拷贝给本身。
+* `deque(n, elem);`                    //构造函数将n个elem拷贝给本身。
+* `deque(const deque &deq);`   //拷贝构造函数
+
+**总结：**deque容器和vector容器的构造方式几乎一致，灵活使用即可
+
+
+
+#### 2.4.3 deque赋值操作
+
+**功能描述：**
+
+* 给deque容器进行赋值
+
+
+
+**函数原型：**
+
+* `deque& operator=(const deque &deq); `         //重载等号操作符
+
+
+* `assign(beg, end);`                                           //将[beg, end)区间中的数据拷贝赋值给本身。
+* `assign(n, elem);`                                             //将n个elem拷贝赋值给本身。
+
+
+
+#### 2.4.4 deque大小操作
+
+**功能描述：**
+
+* 对deque容器的大小进行操作
+
+
+
+**函数原型：**
+
+* `deque.empty();`                       //判断容器是否为空
+
+* `deque.size();`                         //返回容器中元素的个数
+
+* `deque.resize(num);`                //重新指定容器的长度为num,若容器变长，则以默认值填充新位置。
+
+  ​			                             //如果容器变短，则末尾超出容器长度的元素被删除。
+
+* `deque.resize(num, elem);`     //重新指定容器的长度为num,若容器变长，则以elem值填充新位置。
+
+  ​                                                     //如果容器变短，则末尾超出容器长度的元素被删除。
+
+**总结：**
+
+* deque没有容量的概念
+* 判断是否为空   --- empty
+* 返回元素个数   --- size
+* 重新指定个数   --- resize
+
+#### 2.4.5 deque 插入和删除
+
+**功能描述：**
+
+* 向deque容器中插入和删除数据
+
+
+
+**函数原型：**
+
+两端插入操作：
+
+- `push_back(elem);`          //在容器尾部添加一个数据
+- `push_front(elem);`        //在容器头部插入一个数据
+- `pop_back();`                   //删除容器最后一个数据
+- `pop_front();`                 //删除容器第一个数据
+
+指定位置操作：
+
+* `insert(pos,elem);`         //在pos位置插入一个elem元素的拷贝，返回新数据的位置。
+
+* `insert(pos,n,elem);`     //在pos位置插入n个elem数据，无返回值。
+
+* `insert(pos,beg,end);`    //在pos位置插入[beg,end)区间的数据，无返回值。
+
+* `clear();`                           //清空容器的所有数据
+
+* `erase(beg,end);`             //删除[beg,end)区间的数据，返回下一个数据的位置。
+
+* `erase(pos);`                    //删除pos位置的数据，返回下一个数据的位置。
+
+
+**总结：**
+
+* 插入和删除提供的位置是迭代器！
+* 尾插   ---  push_back
+* 尾删   ---  pop_back
+* 头插   ---  push_front
+* 头删   ---  pop_front
+
+
+
+#### 2.4.6 deque数据存取
+
+**功能描述：**
+
+* 对deque 中的数据的存取操作
+
+**函数原型：**
+
+- `at(int idx); `     //返回索引idx所指的数据
+- `operator[]; `      //返回索引idx所指的数据
+- `front(); `            //返回容器中第一个数据元素
+- `back();`              //返回容器中最后一个数据元素
+
+
+
+### 2.5 案例-评委打分
+
+#### 2.5.1 案例描述
+
+有5名选手：选手ABCDE，10个评委分别对每一名选手打分，去除最高分，去除评委中最低分，取平均分。
+
+```c++
+#include <iostream>
+#include <vector>
+#include <deque>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+void test01() {
+	vector<double> v;
+	for (int i = 0; i < 5; i++) {
+		cout << "请评委们给第" << i << "位选手打分:" << endl;
+		deque<double> s;
+		for (int j = 0; j < 10; j++) {
+			double score;
+			cin >> score;
+			s.push_back(score);
+		}
+		sort(s.begin(),s.end());
+		s.pop_front();
+		s.pop_back();
+		double score_m = 0;
+		for (int p = 0; p < s.size(); p++) {
+			score_m += s[p];
+		}
+		score_m = score_m / s.size();
+		v.push_back(score_m);
+
+	}
+	
+	for (int q = 0; q < 5; q++) {
+		cout << "第" << q << "位选手的平均成绩为:" << v[q] << endl;
+	}
+
+}
+
+int main() {
+
+	test01();
+	return 0;
+}
+```
+
+### 2.6 stack容器
+
+#### 2.6.1 stack 基本概念
+
+
+
+**概念：**stack是一种**先进后出**(First In Last Out,FILO)的数据结构，它只有一个出口
+
+栈中只有顶端的元素才可以被外界使用，因此栈不允许有遍历行为
+
+栈中进入数据称为  --- **入栈**  `push`
+
+栈中弹出数据称为  --- **出栈**  `pop`
+
+
+
+
+
+#### 2.6.2 stack 常用接口
+
+功能描述：栈容器常用的对外接口
+
+
+
+构造函数：
+
+* `stack<T> stk;`                                 //stack采用模板类实现， stack对象的默认构造形式
+* `stack(const stack &stk);`            //拷贝构造函数
+
+赋值操作：
+
+* `stack& operator=(const stack &stk);`           //重载等号操作符
+
+数据存取：
+
+* `push(elem);`      //向栈顶添加元素
+* `pop();`                //从栈顶移除第一个元素
+* `top(); `                //返回栈顶元素
+
+大小操作：
+
+* `empty();`            //判断堆栈是否为空
+* `size(); `              //返回栈的大小
+
+
+
+总结：
+
+* 入栈   --- push
+* 出栈   --- pop
+* 返回栈顶   --- top
+* 判断栈是否为空   --- empty
+* 返回栈大小   --- size
+
+
+
+### 2.7 queue容器
+
+### 3.6 queue 容器
+
+#### 3.6.1 queue 基本概念
+
+
+
+**概念：**Queue是一种**先进先出**(First In First Out,FIFO)的数据结构，它有两个出口
+
+
+
+队列容器允许从一端新增元素，从另一端移除元素
+
+队列中只有队头和队尾才可以被外界使用，因此队列不允许有遍历行为
+
+队列中进数据称为 --- **入队**    `push`
+
+队列中出数据称为 --- **出队**    `pop`
+
+
+
+#### 3.6.2 queue 常用接口
+
+
+
+功能描述：栈容器常用的对外接口
+
+
+
+构造函数：
+
+- `queue<T> que;`                                 //queue采用模板类实现，queue对象的默认构造形式
+- `queue(const queue &que);`            //拷贝构造函数
+
+赋值操作：
+
+- `queue& operator=(const queue &que);`           //重载等号操作符
+
+数据存取：
+
+- `push(elem);`                             //往队尾添加元素
+- `pop();`                                      //从队头移除第一个元素
+- `back();`                                    //返回最后一个元素
+- `front(); `                                  //返回第一个元素
+
+大小操作：
+
+- `empty();`            //判断堆栈是否为空
+- `size(); `              //返回栈的大小
+
+总结：
+
+- 入队   --- push
+- 出队   --- pop
+- 返回队头元素   --- front
+- 返回队尾元素   --- back
+- 判断队是否为空   --- empty
+- 返回队列大小   --- size
+
