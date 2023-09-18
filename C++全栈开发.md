@@ -6646,3 +6646,555 @@ List有一个重要的性质，插入操作和删除操作都不会造成原有l
 * `reverse();`   //反转链表
 * `sort();`        //链表排序
 
+
+
+### 2.9 set/multiset容器
+
+#### 2.9.1 set基本概念
+
+**简介：**
+
+* 所有元素都会在插入时自动被排序
+
+
+
+
+
+**本质：**
+
+* set/multiset属于**关联式容器**，底层结构是用**二叉树**实现。
+
+
+
+
+
+**set和multiset区别**：
+
+* set不允许容器中有重复的元素
+
+* multiset允许容器中有重复的元素
+
+  
+
+#### 2.9.2 set构造和赋值
+
+构造：
+
+* `set<T> st;`   //默认构造函数;
+* `set(const set &st);`     //拷贝构造函数
+
+赋值：
+
+* `set& operator=(const set &st);`   //重载等号赋值
+
+
+
+总结：
+
+* set容器插入数据时用insert
+* set容器插入数据的数据会自动排序
+
+#### 2.9.3 set大小和交换
+
+**功能描述：**
+
+* 统计set容器大小以及交换set容器
+
+
+
+**函数原型：**
+
+* `size();`          //返回容器中元素的数目
+* `empty();`        //判断容器是否为空
+* `swap(st);`      //交换两个集合容器
+
+
+
+#### 2.9.4 set插入和删除
+
+**功能描述：**
+
+* set容器进行插入数据和删除数据
+
+**函数原型：**
+
+* `insert(elem);`           //在容器中插入元素。
+* `clear();`                    //清除所有元素
+* `erase(pos);`              //删除pos迭代器所指的元素，返回下一个元素的迭代器。
+* `erase(beg, end);`    //删除区间[beg,end)的所有元素 ，返回下一个元素的迭代器。
+* `erase(elem);`            //删除容器中值为elem的元素。
+
+总结：
+
+* 插入   --- insert
+* 删除   --- erase
+* 清空   --- clear
+
+
+
+#### 2.9.5 set查找和统计
+
+**功能描述：**
+
+* 对set容器进行查找数据以及统计数据
+
+
+
+**函数原型：**
+
+* `find(key);`                  //查找key是否存在,若存在，返回该键的元素的迭代器；若不存在，返回set.end();
+
+```c++
+//如何判断找到了？
+set<int>::iterator pos = s1.find(30);
+if(pos!=s1.end()){
+    cout<<"找到了"<<endl;
+}
+else{
+    cout<<"没找到"<<endl;
+}
+```
+
+
+
+* `count(key);`                //统计key的元素个数 对于set只能是0或者1 因为set不允许重复元素
+
+#### 2.9.6 set和multiset区别
+
+**学习目标：**
+
+* 掌握set和multiset的区别
+
+
+
+**区别：**
+
+* set不可以插入重复数据，而multiset可以
+
+* **set插入数据的同时会返回插入结果，表示插入是否成功**
+
+  ```c ++
+  set<int>s;
+  pair<set<int>::iterator,bool>ret = s.insert(10);//set插入时是有返回值的，有两部分组成，一部分是指向插入位置的指针，一部分是返回是否插入成功了
+  if(ret.second){
+      cout<<"插入成功了"<<endl;
+  }
+  else{
+      cout<<"插入失败了"<<endl;
+  }
+  ```
+
+  
+
+* **multiset不会检测数据，因此可以插入重复数据**
+
+​			multiset 插入时返回的只有迭代器，没有bool值
+
+#### 2.9.7 pair对组创建
+
+**功能描述：**
+
+* 成对出现的数据，利用对组可以返回两个数据
+
+**两种创建方式**：
+
+* `pair<type,type> p(value1,value2);`
+* `pair<type,type> p = make_pair(value1,value2);`
+
+
+
+```c++
+//pair 对组创建
+void test01(){
+    //第一种方式;
+    pair<string,int> p1("Tom",20);
+    
+    //第二种方式；
+	pair<string,int> p2 = make_pair("Jerry",18);
+    
+    cout<<p1.first<<endl;//利用此方法访问对组中的某一元素
+}
+```
+
+#### 2.9.8 set容器排序
+
+学习目标：
+
+* set容器默认排序规则为从小到大，掌握如何改变排序规则
+
+
+
+主要技术点：
+
+* 利用仿函数，可以改变排序规则
+
+
+
+
+
+**示例一**   set存放内置数据类型
+
+```C++
+#include <set>
+
+class MyCompare 
+{
+public:
+	bool operator()(int v1, int v2) {
+		return v1 > v2;
+	}
+};
+void test01() 
+{    
+	set<int> s1;
+	s1.insert(10);
+	s1.insert(40);
+	s1.insert(20);
+	s1.insert(30);
+	s1.insert(50);
+
+	//默认从小到大
+	for (set<int>::iterator it = s1.begin(); it != s1.end(); it++) {
+		cout << *it << " ";
+	}
+	cout << endl;
+
+	//指定排序规则
+	set<int,MyCompare> s2;
+	s2.insert(10);
+	s2.insert(40);
+	s2.insert(20);
+	s2.insert(30);
+	s2.insert(50);
+
+	for (set<int, MyCompare>::iterator it = s2.begin(); it != s2.end(); it++) {
+		cout << *it << " ";
+	}
+	cout << endl;
+}
+
+int main() {
+
+	test01();
+
+	system("pause");
+
+	return 0;
+}
+```
+
+总结：利用仿函数可以指定set容器的排序规则
+
+
+
+**示例二** set存放自定义数据类型
+
+```C++
+#include <set>
+#include <string>
+
+class Person
+{
+public:
+	Person(string name, int age)
+	{
+		this->m_Name = name;
+		this->m_Age = age;
+	}
+
+	string m_Name;
+	int m_Age;
+
+};
+class comparePerson
+{
+public:
+	bool operator()(const Person& p1, const Person &p2)
+	{
+		//按照年龄进行排序  降序
+		return p1.m_Age > p2.m_Age;
+	}
+};
+
+void test01()
+{
+	set<Person, comparePerson> s;
+
+	Person p1("刘备", 23);
+	Person p2("关羽", 27);
+	Person p3("张飞", 25);
+	Person p4("赵云", 21);
+
+	s.insert(p1);
+	s.insert(p2);
+	s.insert(p3);
+	s.insert(p4);
+
+	for (set<Person, comparePerson>::iterator it = s.begin(); it != s.end(); it++)
+	{
+		cout << "姓名： " << it->m_Name << " 年龄： " << it->m_Age << endl;
+	}
+}
+int main() {
+
+	test01();
+
+	system("pause");
+
+	return 0;
+}
+```
+
+总结：
+
+对于自定义数据类型，set必须指定排序规则才可以插入数据
+
+
+
+### 2.10 map/multimap容器
+
+#### 2.10.1map基本概念
+
+**简介：**
+
+* map中所有元素都是pair
+* pair中第一个元素为**key（键值）**，起到索引作用，第二个元素为**value（实值）**
+* 所有元素都会根据元素的**键值**自动排序
+
+
+
+**本质：**
+
+* map/multimap属于**关联式容器**，底层结构是用二叉树实现。
+
+
+
+**优点：**
+
+* 可以根据key值快速找到value值
+
+
+
+map和multimap**区别**：
+
+- map不允许容器中有重复key值元素
+- multimap允许容器中有重复key值元素
+
+
+
+#### 2.10.2  map构造和赋值
+
+**功能描述：**
+
+* 对map容器进行构造和赋值操作
+
+**函数原型：**
+
+**构造：**
+
+* `map<T1, T2> mp;`                     //map默认构造函数: 
+* `map(const map &mp);`             //拷贝构造函数
+
+
+
+**赋值：**
+
+* `map& operator=(const map &mp);`    //重载等号操作符
+
+
+
+#### 2.10.3 map大小和交换
+
+**功能描述：**
+
+* 统计map容器大小以及交换map容器
+
+
+
+
+
+函数原型：
+
+- `size();`          //返回容器中元素的数目
+- `empty();`        //判断容器是否为空
+- `swap(st);`      //交换两个集合容器
+
+
+
+#### 2.10.4 map插入和删除
+
+**功能描述：**
+
+- map容器进行插入数据和删除数据
+
+
+
+
+
+**函数原型：**
+
+- `insert(elem);`           //在容器中插入元素。
+- `clear();`                    //清除所有元素
+- `erase(pos);`              //删除pos迭代器所指的元素，返回下一个元素的迭代器。
+- `erase(beg, end);`    //删除区间[beg,end)的所有元素 ，返回下一个元素的迭代器。
+- `erase(key);`            //删除容器中值为key的元素。
+
+
+
+#### 2.10.5 map查找和统计
+
+**功能描述：**
+
+- 对map容器进行查找数据以及统计数据
+
+
+
+**函数原型：**
+
+- `find(key);`                  //查找key是否存在,若存在，返回该键的元素的迭代器；若不存在，返回set.end();
+- `count(key);`                //统计key的元素个数
+
+
+
+#### 2.10.6 map容器排序
+
+**学习目标：**
+
+- map容器默认排序规则为 按照key值进行 从小到大排序，掌握如何改变排序规则
+
+
+
+
+
+**主要技术点:**
+
+- 利用仿函数，可以改变排序规则
+
+
+
+
+
+**示例：**
+
+```C++
+#include <map>
+
+class MyCompare {
+public:
+	bool operator()(int v1, int v2) {
+		return v1 > v2;
+	}
+};
+
+void test01() 
+{
+	//默认从小到大排序
+	//利用仿函数实现从大到小排序
+	map<int, int, MyCompare> m;
+
+	m.insert(make_pair(1, 10));
+	m.insert(make_pair(2, 20));
+	m.insert(make_pair(3, 30));
+	m.insert(make_pair(4, 40));
+	m.insert(make_pair(5, 50));
+
+	for (map<int, int, MyCompare>::iterator it = m.begin(); it != m.end(); it++) {
+		cout << "key:" << it->first << " value:" << it->second << endl;
+	}
+}
+int main() {
+
+	test01();
+
+	system("pause");
+
+	return 0;
+}
+```
+
+总结：
+
+* 利用仿函数可以指定map容器的排序规则
+* 对于自定义数据类型，map必须要指定排序规则,同set容器
+
+### 2.11 案例-员工分组
+
+#### 2.11.1 案例描述
+
+* 公司今天招聘了10个员工（ABCDEFGHIJ），10名员工进入公司之后，需要指派员工在那个部门工作
+* 员工信息有: 姓名  工资组成；部门分为：策划、美术、研发
+* 随机给10名员工分配部门和工资
+* 通过multimap进行信息的插入  key(部门编号) value(员工)
+* 分部门显示员工信息
+
+
+
+
+
+#### 2.11.2 实现步骤
+
+1. 创建10名员工，放到vector中
+2. 遍历vector容器，取出每个员工，进行随机分组
+3. 分组后，将员工部门编号作为key，具体员工作为value，放入到multimap容器中
+4. 分部门显示员工信息
+
+
+
+实现：
+
+```c++
+#include <iostream>
+#include <vector>
+#include <map>
+#include <string>
+#include <cmath>
+
+using namespace std;
+
+class Workers {
+public:
+	string name;
+	int post;
+	int wages;
+	Workers(string temp_name, int temp_post, int temp_wages) {
+		name = temp_name;
+		post = temp_post;
+		wages = temp_wages;
+	}
+};
+
+void input_workers(vector<Workers> &p) {
+	cout << "请输入员工的姓名：" << endl;
+	string temp_name;
+	cin >> temp_name;
+	int temp_post = rand()%3+1;
+	int temp_wages = rand() % 10000 + 10000;
+	p.push_back(Workers(temp_name, temp_post, temp_wages));
+}
+
+void recute_workers(vector<Workers> &w) {
+
+	for (int i = 0; i < 10; i++) {
+		input_workers(w);
+	}
+}
+
+void test01() {
+	vector<Workers> w;
+	recute_workers(w);
+	multimap<int, Workers> w_sort;
+	for (vector<Workers>::iterator p = w.begin(); p != w.end(); p++) {
+		w_sort.insert(make_pair(p->post, *p));
+	}
+	
+	for (multimap<int, Workers>::iterator q = w_sort.begin(); q != w_sort.end(); q++) {
+		cout << (*q).first << (*q).second.name << (*q).second.wages << endl;
+	}
+}
+
+int main() {
+	test01();
+	return 0;
+}
+```
+
