@@ -5623,7 +5623,7 @@ bcc.gnu.org
 仿函数
 六大部件之间的关系：
 
-![image](C:\Users\Administrator\Desktop\CppLearning\images\releshape.jpg)
+![image](images\releshape.jpg)
 
 泛型编程与面向对象编程思想上不同：面向对象中讲究封装，习惯将属性和方法(对属性的操作)封装在一起形成类。泛型编程提供一种“模板” ，如容器和算法(一些对容器的操作)分开存放。
 
@@ -5647,7 +5647,7 @@ cout<<count_if(vi.begin(),vi.end(),not1(bind2nd(less<int>(),40)));
 
 **“前闭后开”区间** [)
 
-![image](C:\Users\Administrator\Desktop\CppLearning\images\jiliguala.jpg)
+![image](images\jiliguala.jpg)
 
 **tips:c++11一个新特性(for 循环)**:
 
@@ -5676,7 +5676,7 @@ for (auto &elem : vec){
 
 ### 1.2 基本容器一览
 
-![images](C:\Users\Administrator\Desktop\CppLearning\images\image-20230906115336553.png)
+![images](images\image-20230906115336553.png)
 
 **Sequence Containers（顺序式容器）：**
 
@@ -5688,7 +5688,7 @@ for (auto &elem : vec){
   * queue
   * stack
 
-​		![ ](C:\Users\Administrator\Desktop\CppLearning\images\image-20230906154010211.png)
+​		![ ](images\image-20230906154010211.png)
 
 * List：链表。(双向链表) （每次扩充一个节点）
 
