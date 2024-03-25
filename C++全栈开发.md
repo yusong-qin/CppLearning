@@ -5777,6 +5777,13 @@ void test01() {
 	v.push_back(10);
 	v.push_back(20);
 	v.push_back(30);
+    
+    
+    // 可以使用数组方式给他赋值：
+	vector<int> v2(10);
+	v2[0] = 1;	// 正确
+
+	v2[11] = 11; // 错误，越界
 
 	//通过迭代器访问容器中的数据
 
@@ -9579,17 +9586,205 @@ int main() {
 
 
 
+# c++11新特性
+
+## 1.可变参数模板
+
+```c++
+//关键字
+...
+```
+
+
+
+
+
 # 额外知识点整理
 
-## C++随机数生成规则
+### C++字符串操作
 
-问题描述：在自己练习的过程中，要**生成随机数**，了解到**随机数种子**这一概念。
+问题描述：如何对C++中出现的字符串进行单个字符的使用
+
+**string类:**
+
+**string类初始化:**
+
+```c++
+//string初始化
+string str1("abcd");
+string str2(5, 'a');  //5个a
+string str2(5,'abc');   //5个c
+string str3("abcdefghijk",3);   //abc
+string str4 ( "abcdefghijk",3,5);   //从第三个位置开始取5个字符
+
+string s1="abc";
+
+```
+
+**string类常用操作：**
+
+​		1.增加：+, append, insert, push_back
+​        2.删除：clear, pop_back, erase
+​        3.修改：replace, assign, swap
+​        4.大小：size, length, capacity, max_size, resize, reserve
+​        5.判断：empty, compare, >=, <=, >, <
+​        6.遍历：begin, end, front, back, at, find
+​        7.其他：getline, string转换, substr
+**1.增加函数：**
+
+​		使用+
+
+```c++
+string s1("abc");
+string s2("def");
+
+//使用+
+string s3=s1+s2;
+```
+
+​		使用append（vector没有append）
+
+```c++
+//使用append
+s1.append(s2);   //不能用a1.append("def")
+s1.append(3,'K');
+s1.append(s2,1,2);//增加s2从1位开始的两位字符
+
+```
+
+​	使用insert
+
+​	跟vector的insert不一样，vector的insert第一个元素一定是一个迭代器，不能是整数，而string的insert都可以使用
+
+```c++
+//使用insert
+s1.insert(2,"def"); 
+s1.insert(2,s2,1,2); //插入s2的1位开始的两个字符
+s1.insert(2,s2);
+
+s1.insert(s1.begin(),'1');
+s1.insert(s1.begin(),3,'1');
+
+```
+
+**2.删除函数：**
+        使用erase
+        跟vector不一样，vector使用的迭代arr.begin()+n
+        string可以使用迭代器和数字，并且使用迭代器和数字是代表的含义不一样
+
+```c++
+s1.erase(1,2); //从1位开始的两个字符
+s1.erase(1); //删除1位后面的所有字符
+s1.erase(s1.begin()+1); //只删除1位的字符
+```
+
+**3.修改函数：**
+        使用replace
+
+```c++
+//使用replace
+string s1="1234567";
+s1.replace(2,3,"abcdefg",2,4);  //用cdef替换345
+s1.replace(2,3,5,'0');   //用5个0替换345
+```
+
+
+​        使用assign
+
+```c++
+//使用assign
+s1.assign(4,'a');
+```
+
+
+​        使用swap
+
+```C++
+//使用swap
+s1.swap(s2);
+swap(s1,s2);
+```
+
+**4.判断函数：**
+        使用compare
+
+```C++
+//使用compare
+string s("abcd");
+s.compare("abcd"); //返回0
+s.compare("dcba"); //返回一个小于0的值
+s.compare("ab"); //返回大于0的值
+s.compare(s); //相等
+s.compare(0,2,s,2,2); //用"ab"和"cd"进行比较 小于零
+s.compare(1,2,"bcx",2); //用"bc"和"bc"比较。
+```
+
+​        使用<,>
+
+```C++
+string s1("real");
+string s2("abdc");
+int a = s1 > s2;
+cout << a << endl;  //输出1
+
+
+
+```
+
+
+
+**5.遍历函数：**
+        使用find
+        注意find_first_of和find_last_of的区别
+
+```c++
+//使用find
+string str="1234eqsabababcdefg";
+str.find("ab");//返回字符串 ab 在 str 的位置
+str.find("ab", 2);//在 str[2]~str[n-1] 范围内查找并返回字符串 ab 在 str 的位置
+str.rfind("ab", 2);//在 str[0]~str[2] 范围内查找并返回字符串 ab 在 str 的位置
+
+str.find_first_of("ab");
+str.find_first_of("ab", 2);//返回ab中任何一个字符首次在 str[2]~str[n-1] 范围中出现的位置
+
+str.find_last_of("23");//返回23中任何一个字符最后一次在 str 中出现的位置
+str.find_last_of("23", 2);//返回23中任何一个字符最后一次在 str[0]~str[2] 范围中出现的位置
+```
+
+
+**6.其他函数：**
+
+​		使用getline
+
+```C++
+string str;
+getline(cin,str);
+```
+
+​        string转换
+
+```C++
+string a=“1234”；
+int b=atoi(a.c_str());
+
+int a=123;
+string b=to_string(a);
+```
+
+
+
+​        使用substr
+
+```C++
+string s="abcdefg";
+string s1=s.substr(1,3);   //bcd
+string s2=s.substr(4);     //efg
+```
 
 
 
 
+————————————————
 
-### 1. random
-
-
+# C++项目
 
