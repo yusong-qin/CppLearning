@@ -9602,6 +9602,8 @@ int main() {
   * 清空预约 —— 清空所有预约记录
   * 注销登录 —— 退出登录
 
+
+
 # Linux系统编程和网络编程
 
 ## 1.进程
@@ -9773,88 +9775,615 @@ int main(){
 }
 ```
 
+### 1.8 fork后父子进程异同
 
+刚刚fork后：
 
+父子进程相同：
 
+* 全局变量、.data、.text、栈、堆、环境变量、用户ID、进程工作目录、宿主目录、信号处理方式......
 
+父子进程不同：
 
+* 进程ID、父进程ID、fork()返回值、进程运行时间、闹钟（定时器）、未决信号集
 
+#### 读时共享 写时复制
 
+案例：父进程有0-3G用户空间内容、fork()后每一个子进程都要将父进程的0-3G地址空间完全拷贝一份，映射到物理内存吗？
 
+答：当然不是。
 
+**父子间进程遵循读时共享，写时复制** 也就是对于上面说的全局变量、堆栈等，如果是读操作，那么父子进程共享同一片内存，写操作会复制一份。
 
+#### fork后父子进程共享
 
+1、文件描述符(对应打开的文件结构体)
 
+2、mmap创建的映射区
 
+#### gdb调试
 
+​	使用gdb调试的时候，gdb只能跟踪一个进程。可以在fork函数调用之前，通过指令设置gdb调试工具跟踪父进程或者是跟踪子进程。默认跟踪父进程。
 
+**set follow-fork-mode chlid** 命令设置gdb在fork之后跟踪子进程
 
+**set follow fork mode parent**  设置跟踪父进程
 
+注意：一定要在fork函数调用之前设置才有效
 
+### 1.9 exec函数族 
 
+函数族的意思是这一串函数都是exec开头的
 
+* 工作原理：
+  * 将当前进程的.text、.data..替换为所需要加载的程序的.text、.dara..然后让进程从新的.text第一条指令开始执行。但进程id不变。
+* 工作特性：
+  * exec函数族函数，一旦调用成功执行新程序，不会返回。只有失败才会返回，错误值-1，errno.
+  * 通常使用时，我们只需在 execxxx()函数后，调用perror和exit,无需if判断。
 
+​	通常有6种exec函数，最常用的两种如下：
 
+#### execlp 
 
+*  p: PATH 的意思。 该函数在使用时，自动借助环境变量PATH，寻找可执行程序。
+   * 可以用来调用系统的程序。
 
+```c
+       int execlp(const char *file, const char *arg, .../* (char  *) NULL */);
+参数：
+    参1 file:加载的程序名字。需要配合 PATH使用。
+   	参2 argv0：可执行文件名
+    参3 argv1
+    参4 argv2
+       ....
+    哨兵：NLL
+返回值： 
+    成功： 不返回
+    失败：-1 errno;
+//该函数通常用来执行系统程序：ls、data、cp、cat、等命令
+```
 
+示例：
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h>
 
+void sys_err(const char *str){
+        perror(str);
+        exit(1);
+}
 
 
+int main(int argc,char *argb[]){
+        //使用execlp 执行ls -l -F -R -a
+        pid_t pid= fork();
+        if(pid==0){
+            // execlp("ls","-l","-F","-a",NULL);//这样写是错误的，第一个参数是让execlp去PATH路径里面找该可执行文件名，第二个参数才是需要运行的可执行文件名
+                execlp("ls","ls","-l","-F","-a",NULL);
+            	//调用错误报错，调用成功不用管，因为他一成功就会执行新程序
+                perror("/bin/ls exec error");
+                exit(1);
+        }else if(pid>0){
+                sleep(1);
+                printf("parent\n");
+        }
 
+        return 0;
+}
+/*
+该程序使用execlp()命令调用了ls 系统命令 
+输出：
+//子进程的输出
+drwxrwxr-x 4 hiro hiro  4096  4月 12 16:54 ./
+drwxrwxr-x 4 hiro hiro  4096  4月 11 19:53 ../
+drwxrwxr-x 3 hiro hiro  4096  4月 11 19:53 bin/
+-rwxrwxr-x 1 hiro hiro 17960  4月 12 16:54 execlp*
+-rw-rw-r-- 1 hiro hiro   435  4月 12 16:54 execlp.c
+drwxrwxr-x 3 hiro hiro  4096  4月 11 19:53 obj/
+-rwxrwxr-x 1 hiro hiro 17896  4月 12 15:50 test_fork*
+-rw-rw-r-- 1 hiro hiro   744  4月 12 15:50 test_fork.c
+-rw-rw-r-- 1 hiro hiro   717  4月 11 23:08 test_fork.cpp
 
+parent	//父进程的输出
 
+*/
+```
 
+#### execl
 
+* 直接指定要加载的程序地址(绝对地址或者相对地址)访问路径。可以是系统可执行文件也可以是用户的可执行文件。
 
+```c
+int execl(const char *path, const char *arg, .../* (char  *) NULL */);
+```
 
 
 
+```c
+int main(int argc,char *argb[]){
+        //使用execlp 执行ls -l -F -R -a
+        pid_t pid= fork();
+        if(pid==0){
+            	//execl第一个参数要传可执行文件的地址
+                execl("/bin/ls","ls","-l","-F","-a",NULL);
+                perror("/bin/ls exec error");
+                exit(1);
+        }else if(pid>0){
+                sleep(1);
+                printf("parent\n");
+        }
 
+        return 0;
+}
+```
 
+* exec 函数族一般规律
 
+  I(llist)						    命令行参数列表
 
+  p(path) 			   		搜索file时使用path变量
 
+  v(vector)			    	  使用命令行参数数组
 
+  e(environment)		  使用环境变量数组，不使用进程原有的环境变量，设置新加载程序的环境变量
 
+​	事实上，只有execve是真正的系统调用，其他五个函数最终都调用execve。
 
 
 
+练习：编写程序，创建子进程，子进程使用exec族函数，获取当前系统中的进程详细信息，并打印到文件中
 
+#### vfork()函数
 
+vfork()函数用于创建一个新进程，而新进程的目的是exec一个新程序，所以不会复制父进程的地址空间。
 
+vfork()函数调用和返回值与fork()相同，但两者语义不同。
 
+vfork()和fork()另一个区别是：vfork()保证子进程先运行，在子进程调用exec或者exit()之后父进程才恢复运行。
 
+## 2. C++11多线程编程
 
+线程的最大数量取决于cpu 的核数
 
 
 
+# C++11新特性
 
+## 1. 原始字面量 
 
+定义方式：``` R"xxx()xxx" ``` 
 
+括号里面的会原始输出。
 
+括号外面的会被忽略，但是左右得写一样的。
 
+## 2.指针空值类型-nullptr
 
-
-
-
-
-
-
-
-
-
-
-
-# c++11新特性
-
-## 1.可变参数模板
+问题：NULL和nullptr有什么区别呢？
 
 ```c++
-//关键字
-...
+在C++中：
+NULL = 0;
+nullptr 会自动转换指针类型
 ```
+
+## 3.auto关键字
+
+auto并不是一种实际的数据类型，他只是一个类型声明的“占位符”
+
+使用auto关键字必须要进行初始化，以让编译器推导出它的实际类型，在编译时将auto占位符替换为真正的类型
+
+```c++
+auto 变量名= 变量值;
+```
+
+例子：
+
+```c++
+auto x =3.14; //x时浮点类型double
+auto nb;//error,变量必须初始化
+auto double nbl;//语法错误
+```
+
+
+
+不仅如此，auto还可以和指针、引用结合起来使用，也可以带上限定符```const、volatile```，在不同的场景下具有不同的推导规则，规则内容如下：
+
+* 当变量不是指针或者引用时，推导的结果不会保留const、volatile关键字
+* **当变量是指针或引用时，会保留const、volatile关键字**
+
+例子：
+
+```c++
+int temp = 10;
+
+//int* a 		auto=int
+auto* a  = &temp;
+
+//int* b  		auto=int*
+auto b = &temp;
+
+//int      		auto=int
+auto &c = temp;//引用
+
+//int 			auto=int
+auto d = temp;
+
+
+有const修饰的：
+    
+int temp = 250;
+
+// auto = int
+const auto al = temp;
+
+//a1是const int类型的，不会保留const关键字
+// auto = int
+auto a2 = a1;
+
+//引用 temp 是int 类型的   auto = int
+const auto &a3 = temp;
+
+//a3是个引用，取地址元素  auto = const int 会保留const关键字
+auto&a4 = a3;
+
+//a1 是const int 的引用，当变量是引用或者是指针会保留const 
+//auto = const int
+auto* pt4 = &al; 
+
+//ps：知识回顾 
+const int* pt4;是一个指针常量,即指针指向的值不能更改，但是指针的指向能修改
+
+int* const pt4;
+
+```
+
+
+
+### 3.1 不能够使用auto的场景
+
+1.不能作为函数形参使用
+
+```c++
+void func(auto a1,auto a2){//error
+    
+}
+```
+
+相当于没有对形参进行初始化，编译器不能推导出auto的值。因为函数被调用的时候才会被初始化，而函数本身在一开始就要加入代码区，如果不知道a1、a2的值，不知道要占用多大的代码区空间。
+
+
+
+2.不能用于类的非静态成员变量的初始化
+
+```c++
+class Tast{
+    auto v1 = 0; //error 
+    static auto v2 = 0;//error,类的非常量静态成员不允许在类内部直接初始化，语法错误
+    static const auto v3 = 10; //正确，定义的时候进行初始化
+}
+```
+
+为什么？ 
+
+因为类的非静态成员不属于类，属于对象，只有对象创建出来之后才能对变量进行初始化，不创建对象的时候auto 无法对变量进行自动类型推导。
+
+3.不能用auto关键字定义数组(创建新数组)
+
+```c++
+int func(){
+    int array[] = {1,2,3};
+    auto t1 = array;//可以，ti被推导为int,t1并不是个数组，是一个指针，array是一个指向array[]数组首元素的指针。
+    auto t3[] = {1,2,3};
+    auto t2[] = array;//error，auto无法定义数组
+    
+}
+```
+
+4.无法使用auto推出模板参数
+
+### 3.2 auto的应用
+
+1.用于STL的容器遍历
+
+```c++
+map<int,string> mp;
+mp.insert(make_pair(1,"ace"));
+
+//map<int,string>""iterator it = mp.begin();
+auto it = mp.begin();
+```
+
+2.用于泛型编程
+
+ ```c++
+clss C1{
+    static int get(){
+        return 10;
+    }
+};
+
+class C2{
+    static string get(){
+        return "hello world";
+    }
+}
+
+template<class T>
+void print_c(){
+    auto  ret = T::get();
+    cout<<"ret"<<ret<<endl;
+}
+ ```
+
+
+
+## 4.decltype
+
+```c++
+decltype(表达式);
+```
+
+decltype是“declear type”的缩写，意思是证明类型，decltype的推导是在编译期完成的，他只是用于表达式类型的推导，并不会计算表达式的值。一些简单的例子
+
+```c++
+int a = 10;
+decltype(a) b = 99; //b -> int 
+decltype(a+3.14) c= 52.13; //c-> double
+//这句话相当于 double c = 52.13;
+//定义了一个double类型的c
+
+int x=99;
+const int& y = x;
+decltype(y) b = x;
+//相当于 const int &b  = x;
+
+```
+
+### 4.1 decltype的应用
+
+decltype 多用于泛型编程。
+
+## 5. 返回值类型后置
+
+
+
+## 6. final关键字
+
+**final加在后面**
+
+final 关键字 **限制某个类不能被继承，或者某个虚函数不能被重写** ，并且要把final关键字放到类或者函数的后边
+
+ps：c++中的虚函数主要用于实现多态
+
+
+
+### 6.1 修饰虚函数
+
+阻止子类重写父类的虚函数。通常不是在基类的虚函数中用final修饰，而是在继承了基类虚函数的子类中加final修饰，防止后面继承该子类的函数进行重写
+
+```c++
+class Base{
+pubilc:
+    virtual void test(){ //virtual 表示虚函数
+        cout<<"Base class..";
+    }
+};
+
+class Child::public Base{
+public:
+    void test() final{
+        cout<<"Child class..";
+    }
+};
+
+class GrandChild :public Child{
+public:
+    //报错，Child类中该函数被final修饰，不能被重写
+    void test(){
+      	cout<<"GrandChild class..";
+    }
+}
+```
+
+
+
+### 6.2 final修饰类
+
+该类不能被继承，也就是不能有派生类，断子绝孙类
+
+```c++
+class Base{
+pubilc:
+    virtual void test(){ //virtual 表示虚函数
+        cout<<"Base class..";
+    }
+};
+
+class Child final::public Base{
+public:
+    void test(){
+        cout<<"Child class..";
+    }
+};
+
+    //报错，Child类被final修饰，不能被继承
+class GrandChild:public Child{
+public:
+
+    void test(){
+      	cout<<"GrandChild class..";
+    }
+}
+```
+
+
+
+## 7.override关键字
+
+**override——重写 ，写在后面**，虚函数
+
+确保在派生类总声明的重写函数与基类有相同的签名，也明确表明将会重写基类的虚函数，这样写可以保证重写的虚函数的正确性，也提高了代码的可读性
+
+
+
+```c++
+class Base{
+pubilc:
+    virtual void test(){ //virtual 表示虚函数
+        cout<<"Base class..";
+    }
+};
+
+class Child::public Base{
+public:
+    //表明重写基类的虚函数
+    void test() override{
+        cout<<"Child class..";
+    }
+};
+
+class GrandChild :public Child{
+public:
+    //表明重写Child类的test函数
+    void test() override{
+      	cout<<"GrandChild class..";
+    }
+}
+```
+
+
+
+## 8.using 关键字
+
+C++11以前两种用法 ：
+
+* 1.定义命名空间：```using namespace std;```
+
+* 2.子类对象使用父类方法
+
+  ```c++
+  using Child::tase();
+  ```
+
+  
+
+C++ 11新增用法：
+
+3. **定义类型的别名**  ```using 新的类型名= 旧的类型名```
+
+```c++
+//typedef也能定义别名
+typedef unsigned int uint_t; //uint_t就是别名
+
+//using 定义别名
+using u_int =  unsigned int;
+
+
+使用using好处，对函数指针具有更强的可读性
+int mytest(int a,string b){
+    cout<<a<<b<<endl;
+    return 0;
+}
+
+typedef:
+typedef int(*func)(int,string);//干嘛呢？
+
+using:
+//定义了一个函数指针，他的参数类型是(int,string)，他的返回值是int
+using func =int(*)(int,stirng);
+
+```
+
+
+
+4.给模板函数定义别名
+
+```c++
+template<template T>
+using MyMap = map<int,T>;
+
+
+//用的时候：
+MyMap<int> m1;
+m1.insert(make_pair(1,2));
+
+MyMap<string> m2;
+m2.insert(make_pair(3,"你好"));
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
