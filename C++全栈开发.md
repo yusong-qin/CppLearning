@@ -4887,6 +4887,24 @@ int main(){
 }
 ```
 
+**注:**CSV 等表格文件分格存放用","隔开
+
+例如
+
+```c++
+ofstream ofs;
+
+ofs.open("test.csv", ios::out|ios::ate|ios::app);
+
+for (vector<Players>::iterator p = p_name.begin(); p != p_name.end(); p++) {
+	ofs << (*p).name <<","<< (*p).a_score << endl;
+}
+```
+
+
+
+
+
 #### 5.1.2 读文件
 
 读文件与写文件步骤相似，但是读取方式相对于比较多
@@ -9583,6 +9601,249 @@ int main() {
   * 查看机房 —— 查看所有机房信息
   * 清空预约 —— 清空所有预约记录
   * 注销登录 —— 退出登录
+
+# Linux系统编程和网络编程
+
+## 1.进程
+
+### 1.1 进程和程序
+
+程序 → 剧本(纸)   进程→ 戏（舞台、灯光、道具......）
+
+*  程序：编译好的二进制文件、静态的、不占用系统资源
+*  进程：动态的、占用系统资源
+
+程序与进程的关系   1 : N
+
+### 1.2 CPU 和 MMU
+
+![image-20240411140703160](images\image-20240411140703160.png)
+
+![image-20240411141244201](images\image-20240411141244201.png)
+
+
+
+
+
+### 1.3 进程控制块  PCB
+
+包含的内容： 
+
+* 进程的id  pid_t类型表示（非负整数）
+* 进程的状态: 就绪、运行、挂起、停止等
+* 描述虚拟地址空间信息
+* 描述控制终端的信息
+* 当前的工作目录
+* umask掩码
+* 文件描述表符，包含很多指向file结构体的指针
+
+### 1.4 进程状态
+
+​	五态模型： 初始、就绪、运行、挂起、终止
+
+ * 就绪态：完成准备，等待cpu划分时间片
+ * 运行态：获取cpu时间片，正在运算
+ * 挂起态：等待除cpu以外的其他资源，在这种状态下，进程会主动放弃cpu使用权
+ * 终止态：正常或异常终止的进程
+
+
+
+
+
+### 1.5 fork函数
+
+用于创建进程
+
+![image-20240411180704373](images\image-20240411180704373.png)
+
+```c++
+pid_t fork(void);
+成功：
+// fork之后，会产生一个子进程。 父、子进程各自对fork函数做返回。
+父进程：返回 子进程id
+子进程：返回 0
+    
+失败：
+    //不会产生子进程
+父进程： 返回 -1
+```
+
+
+
+```c++
+#include <iostream>
+#include <pthread.h>
+#include <string>
+#include <error.h>
+#include <unistd.h>
+
+using namespace std;
+
+int main() {
+	//子进程不会运行fork()函数之前的代码
+	cout << "======before fork========" << endl;
+
+	pid_t pid = fork();
+
+
+	if (pid == -1)		//创建失败
+		cout << "fork error" << endl;
+	if (pid == 0) {		//创建成功
+		
+		cout << "I am child ,ID:" << getpid() << endl;
+		cout << "my prient is:" << getppid() << endl;
+	}
+	else if (pid > 0) {// 返回值>0说明是父进程，返回的是子进程的id
+		cout << "I am prient:" << getpid() << endl;
+		cout << "my son is:" << pid << endl;
+	}
+
+	//子进程会执行父进程fork()之后的程序吗？
+	cout << "========after fork==========" << endl;
+	//答案是会的
+	return 0;
+	/*
+
+	*/
+}
+```
+
+
+
+#### 1.5.1 getpid函数 	
+
+​	获取当前进程的ID
+
+​	getpid();
+
+#### 1.5.2 getppid函数
+
+​	获取当前进程父进程的ID
+
+​	getppid();
+
+
+
+ps: 区分一个函数是”系统调用“还是”库函数“
+
+* 是否访问内核数据结构
+* 是否访问外部硬件资源
+
+二者有任一，则为系统调用，否则为库函数
+
+### 1.6 进程控制 
+
+* **ps aux | grep 关键字** 搜索该关键字的进程
+* ./a.out 进程的父进程是bash
+* fork之后，父、子进程共同争夺cpu，执行先后顺序随机
+
+
+
+### 1.7 循环创建n个子进程
+
+
+
+```c++
+#include <iostream>
+#include <pthread.h>
+#include <string>
+#include <error.h>
+#include <unistd.h>
+
+using namespace std;
+
+
+
+int main(){
+    int  i = 0;
+    
+    for(i=0;i<5;i++){
+        //fork(); //直接这样写不行，子进程也会调用之后的fork();
+        if(fork()==0)
+            break;
+    }
+    if(i==5){
+        sleep(5);
+        cout<<"parent"<<endl;
+    }
+    else{
+        sleep(i);
+        cout<<"I am"<<i+1<<"th child"<<endl;
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
