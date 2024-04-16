@@ -1,3 +1,9 @@
+
+
+
+
+
+
 # C++基础入门
 
 ## 1. C++初识
@@ -393,7 +399,7 @@ int add(int a,int b){
 }
 ```
 
-### 6.3函数的调用
+### 6.3 函数的调用
 
 **功能**：使用定义好的函数
 
@@ -411,7 +417,7 @@ int add(int a,int b){
 
 函数的**声明可以多次**，但是函数的**定义只能有一次**
 
-### 6.6函数的分文件编写
+### 6.6 函数的分文件编写
 
 **作用**：让代码结构更加清晰
 
@@ -1227,7 +1233,7 @@ int main(){
 
 ## 2. 引用
 
-### 2.1引用的基本使用
+### 2.1 引用的基本使用
 
 **作用**：给变量取别名
 
@@ -1361,7 +1367,7 @@ void showValue(int& val){
     val = 10;//此时内部val和外部b的指向的内存地址中的值发生了改变。
 }
 //常量引用
-void showValue2(cost int& val){
+void showValue2(const int& val){
     val = 10;//报错，常量引用。指向的内存地址中的值不可以修改
 }
 
@@ -10317,15 +10323,34 @@ MyMap<string> m2;
 m2.insert(make_pair(3,"你好"));
 ```
 
+## 9.委托构造函数
 
+委托构造函数允许使用同一个类中的一个构造函数调用其他的构造函数，从而简化相关变量的初始化。
 
+## 10.继承构造函数
 
+子类中直接使用父类的构造函数，无需自己再写构造函数。
 
+## 11.初始化列表
 
 
 
+**统一的初始化**
 
+```c++
+//对象的初始化
+struct Person{
+    int id;
+    double  salary;
+}zhangsan{1,200};
 
+//int指针初始化
+int* P = new int{520};
+//double类型初始化
+double b = double{520.13};
+//列表初始化
+int *array  = new int[3]{1,2,3};
+```
 
 
 
@@ -10333,55 +10358,849 @@ m2.insert(make_pair(3,"你好"));
 
 
 
+## 12.基于范围的for循环
 
 
 
+c++11中基于范围的for循环，语法格式
 
+```c++
+for(declaration:experssion){
+    //循环体
+}
+```
 
 
 
+上式中```declaration```标明遍历声明，```experssion``` 是要遍历的对象，可以是表达式、容器、数组、初始化列表(写在大括号里面的数据)
 
 
 
+**注意事项**
 
+### 12.1 关系型容器 K-V 结构  key-value
 
+栗子：map
 
+```c++
+map<int,string> m{
+    {1,"111"},{2,"222"},{3,"333"}
+};
 
+//基于范围的for循环
+for(auto &i : m){
+    cout<<i.first<<i.second<<endl;
+}
 
+//普通for循环
+for(auto i=m.begin();i<m.end();i++){
+    cout<<i->first<<i->second<<endl;
+}
+```
 
+注意：
 
+使用**基于范围的for循环**得到的是容器中的value_type，相当于一个对组(std::pair)对象，提取键值对的方式如下：
 
+* it.first
+* it.second
 
+使用**普通的for循环**得到的是迭代器：提取键值对的方式如下(和指针相同)：
 
+* it->first
+* it->second
 
+#### 12.2 元素只读
 
+对于只读容器，如
 
+set(集合)自带自读属性，for循环中的 auto & 会被视为 const auto & ,不能进行修改操作
 
+map容器中的key值也是只读的，for循环中也不能修改key值
 
 
 
+## 13.可调用对象与其包装器、绑定器
 
+在C++中存在“可调用对象”这么一个概念，通俗讲就是这类对象可以用函数的方式进行调用，可调用对象有如下几种定义（四大类）：
 
+* 是一个函数指针。
+* 是一个具有 operator() 成员函数的类对象（仿函数）。
+* 是一个可被转换为函数指针的类对象。
+* 是一个类成员（函数）指针。
 
+包装器：上面几种不同类型的可调用对象 以一种统一的类型进行包装。
 
+绑定器：对包装好的可调用函数进行参数绑定，进行初始化操作等。
 
 
 
+### 13.1 四大类可调用对象
 
+**1.是一个函数指针：**
 
+函数指针指向是函数而非对象。函数的类型(也就是指针的类型) 由他的返回值和形参类型共同决定，与函数名无关。
 
+函数指针定义方式：括号必不可少
 
+``````
+返回值类型 (*函数指针名)(形参类型1,形参类型2...)
+``````
 
+```c++
+using funcptr = int(*)(int,int);//函数指针定义方法1
 
+int print(int a,int b){
+    cout<<a<<b<<endl;
+    return 0;
+}
 
+//函数指针定义方法2
+//对于任意函数，都可以抽象出一个对应的函数指针
+int (*pr)(int,int);
+pr = &print; //取函数print的地址传给函数指针
+```
 
+**2.是一个具有operator()成员函数的类对象(仿函数)**
 
+```c++
+class Test{
+public:
+    int a = 10;
+   	string b = "xiaohong";
+    //()操作符重载 
+    void operator()(){
+        cout<<a<<b<<endl;
+    }
+    //非静态成员函数 创建对象时创建
+    void Hello(){
+       	cout<<"hello world!"<<endl;
+    //静态成员函数 创建类时创建，即程序执行一开始就创建
+    static void World(){
+       	cout<<"hello world!"<<endl;
+    }
+};
+```
 
+**3.是一个      可以被转换成函数指针的类     的   对象   **
 
+```c++
+using funcptr = void(*)(int,string);//函数指针定义方法1
 
+class Test{
 
+//这个类中定义了一种  重载ptr函数指针    的重载操作符函数 ， 因此该函数的对象可以用来充当函数指针，并指向类中的静态成员函数， 要注意：该静态成员函数的返回值类型和参数类型必须和函数指针定义的一致 
+  operator funcptr(){
+      return world;
+  }
+  static void World(int a,string s){
+      cout<<"hello world!"<<endl;
+  }
+};
 
+//使用
+Test t;
+t(1,"你好");
+```
 
+**4.是一个类成员的函数指针或者类成员指针**
+
+```c++
+类函数指针
+using funcptr = void(*)(void);
+funcptr f = &Test::World; //静态方法，类存在他就存在
+
+using funcptr1 = void(Test::*)(void);
+funcptr1 f1 = &Test::hello;
+
+
+类成员指针
+//表明ptr1这种类型  是  属于Test里的int类型的指针  
+using ptr1 = int Test::*; 
+//定义这种类型的一个指针对象
+ptr1 pt = &Test::a;
+
+
+
+//调用
+Test ttt;
+(ttt.*f1)();	//执行hello();
+(ttt.*pt) = 100;// a= 100;
+```
+
+
+
+
+
+### 13.2 可调用对象包装器
+
+```std::function```是可调用对象的包装器。他是一个类模板，可以容纳除了类成员(函数)指针以外的所有可调用对象。通过指定他的模板参数，他可以用统一的方式处理函数、函数对象、函数指针，并允许保存和延迟执行他们。
+
+**基本用法**
+
+必须包含functional头文件，可调用对象包装器的使用语法如下：
+
+```c++
+#include <functional>
+std::function<返回值类型(参数类型列表)> 自定义名称 = 可调用对象;
+```
+
+``` c++
+using ptr = void(*)(int a,string b);
+
+
+//普通函数
+void print(int){
+    cout<<"hello world"<<endl;
+}
+
+
+class Test{
+    //仿函数
+    void operator()(int a){
+        cout<<a<<endl;
+    }
+    
+    //这个类中定义了一种  重载ptr函数指针    的重载操作符函数 ， 因此该函数的对象可以用来充当函数指针，并指向类中的静态成员函数， 要注意：该静态成员函数的返回值类型和参数类型必须和函数指针定义的一致 
+    operator ptr(){
+        return world;
+    }
+    
+    //静态成员函数
+    void static world(int a,string b){
+        cout<<a<<b<<endl;
+        return;
+    }
+};
+
+//包装普通函数
+function<void(int)> f1 = print;
+
+//包装类的静态函数
+function<void(int,string)> f2 = Test::world;
+
+//包装仿函数
+Test ta;
+function<void(int)> f3 = ta;
+
+//包装转换函数指针的对象
+Tast tb;
+function<void(int,string)> f4 = tb;
+
+
+//调用
+f1(1);				//调用普通函数
+f2(2,"你好");		   //调用类的静态函数
+f3(3);				//调用仿函数
+f4(4,"你好");		   //调用被作为函数指针的类对象
+
+```
+
+同时，**包装器包装好的可调用函数也可以作为参数进行传递** 此时会传递一段业务逻辑
+
+
+
+例如：
+
+```c++
+class A{
+public:
+    //构造函数的参数是一个包装器对象
+  	A(const function<void(int string) &f>):callback(f){
+        
+    }
+    
+    void notify(int id,string name){
+        callback(id,name);
+    }
+    
+    //其中 函数:callback(f) 是 初始化列表  相当于 函数{ callback = f }
+    
+private:
+    function<void(int,string)> callback; 
+};
+
+
+void print(int m,string n){
+    print<<m<<n<<endl;
+    return;
+}
+上面的类 可以通过创建一个对象 ，并在构造函数中传递一个包装器 [一段业务逻辑]，那么该包装器会保存在该对象中，当你要执行这一段业务逻辑的时候，只需要用该对象调用notify成员方法，并传递值，该方法就会 调用 对象中保存的业务逻辑，对传递的值进行包装器的处理。
+    
+A  aa(print);    //传递普通函数
+aa.notify(1,"abc");
+
+A  bb(Test::world); //传递静态成员函数
+aa.notify(2,"ttt");
+
+Test t;
+A  cc(t);			//传递仿函数 本例中仿函数的参数列表和包装器中的不同，不能传递
+cc.notify(3,"www");
+
+Test tb;
+A dd(tb);			//传递被转换为函数指针的类对象
+dd.notify(4,"hhh");
+
+```
+
+
+
+### 13.3 可调用对象绑定器
+
+```std::bind``` 用来将可调用对象与其参数一起进行绑定。绑定后的结果可以使用```std::function```进行保存，并延迟调用到任何我们需要的时候。通常他有两大作用：
+
+* 1. 将可调用对象和其参数一起绑定成一个仿函数
+* 2. 将多元(参数个数>1)可调用对象转换为一元或者(n-1)元可调用对象，即只绑定部分参数。
+
+**绑定器语法格式:**
+
+```
+// 绑定非类成员函数/变量/类的静态成员函数
+auto f = std::bind(可调用对象地址，绑定的参数/占位符)
+//绑定类非静态成员函数/变量
+auto f = std::bind(类中成员函数/成员变量地址 ，类实例对象地址，绑定的参数/占位符)
+```
+
+**// 绑定非类成员函数/变量/类的静态成员函数**
+
+auto f = std::bind(可调用对象地址，绑定的参数/占位符)
+
+栗子：
+
+placeholders::_x 是一个占位符，表示这个位置   在该函数被调用时   被传入的第x个参数所替代
+
+```placeholders::_1 ,```
+
+```placeholders::_2,.....```
+
+```c++
+#include <iostream>
+#include <functional>
+
+using namespace std;
+
+void output(int x,int y){
+    cout<<x<<" "<<y<<endl;
+}
+
+
+int main(){
+    //使用绑定器绑定可调用对象和参数，并调用得到的仿函数 
+    bind(output,1,2)();
+    bind(output,placeholders::_1,2)(10);
+    bind(output,1,placeholders::_1)(10);
+    
+    //error ,   实参列表里只有一个10 没有第二个参数
+    bind(output,1,placeholders::_2)(10);
+    
+    //调用时第一个参数10被吞掉了，没有被使用       placeholders::_2 取到了第二个参数20
+    bind(output,1,placeholders::_2)(10,20);
+    
+    bind(output,placeholders::_1,placeholder::_2)(10,20);   //output(10,20);
+    bind(output,placeholders::_2,placeholder::_1)(10,20);   //output(20,10);
+    
+    
+    return 0;
+}
+```
+
+
+
+栗子2：
+
+```c++
+//三个参数的函数 ，int int 和 包装器包装成的仿函数       这种函数怎么包装呢？
+void testFunc2(int x,int y,const function<void(int,int)> &f){
+    if(x%2==0){
+        f(x,y);
+    }
+}
+
+void output_add(int x,int y){
+    cout<< x+y <<endl;
+}
+
+int main(void){
+    for(int i=0;i<10;i++){
+        //绑定output_add 和他的参数
+        auto f1 = bind(output_add,placeholders::_1,placehoders::_2);  //得到一个可调用对象，并用f1接收
+        
+        //testFunc2和他的参数
+        testFunc2(i,i,f1);
+       	//此时 f1被调用，他的参数被传入的第1个参数和第二个参数所替代
+		
+    }
+    return 0;
+}
+```
+
+
+
+**//绑定类非静态成员函数/变量**
+
+auto f = std::bind(类中成员函数/成员变量地址 ，类实例对象地址，绑定的参数/占位符)
+
+```c++
+class Test{
+public:
+    void output(int x,int y){
+        cout<<x<<y<<endl;
+    }
+    
+    int m_number = 100;
+}
+
+void testFunc(int x,int y,const function<void(int,int)> &f){
+    if(x%2==0){
+        f(x,y);
+    }
+}
+
+int mian(){
+
+    //成员函数绑定
+    Test t;
+              //绑定Test类中的非静态成员函数 bind(类成员函数的地址，类对象的地址，参数或占位符)
+    auto  f1 = bind(&Test::output,&t,placeholder::_1,placeholder::_2);
+    f1(10,20);//调用f1
+    for(int i=0;i<10;i++){
+        testFunc(i,i,f);//在testFunc中调用f , 其中f的参数会被调用时传入的第一个参数和第二个参数所代替
+    }
+    
+    //成员变量绑定  
+    auto f3 = bind(&Test::m_number,&t);//成员变量没有参数，可以不写
+    f3();//仿函数，但是表示的是一个变量 m_number
+    cout<<f3()<<endl;  //100
+    f3() = 666;
+    cout<<f3()<<endl;  //666
+    return 0;
+}
+```
+
+**作用:使用绑定器绑定成员函数 和成员方法后，会绑定成一个仿函数，那么这个仿函数就可以用包装器进行包装**
+
+``` c++
+function<void(int,int)> func_f;
+func_f f1;
+
+结合成一句：
+function<void(int,int)> func_f = bind(&Test::output,&t,placeholder::_1,placeholder::_2);
+
+//包装器包装 int类型的类成员变量 
+function<int(void)> func_f_int= bind(&Test::m_number,&t);
+func_f_int();   // 100
+func_f_int() = 10;   //t.m_number = 10;
+
+
+要注意：
+auto  f1 = bind(&Test::output,&t,placeholder::_1,placeholder::_2);
+function<void(int,int)> func_f = bind(&Test::output,&t,placeholder::_1,placeholder::_2);
+他俩的类型是不一样的：
+第一个是自动类型推导出来的类型， 即 f1 应该是函数指针
+第二个是包装器类的一个对象, 即 func_f 的类型是包装器类
+```
+
+
+
+## 14. lambda 表达式 
+
+### 14.1 基本用法
+
+lambda 表达式优点：
+
+* 就地匿名定义目标函数或者函数对象，不需要额外写一个命名函数或者函数对象
+* 简洁，避免了代码膨胀和功能分散，让开发更高效
+* 在需要的时间和地点实现功能闭包，使程序更灵活
+
+原地操作、简洁、灵活
+
+
+
+lambda表达式定义了一个匿名函数，并且可以捕获一定范围内的变量。**表达式定义语法如下**:
+
+```c++
+[capture](params)    opt   ->ret {body};
+```
+
+
+
+**```[捕获列表](参数列表)    函数选项   ->返回值类型   {函数体};```**
+
+ 
+
+**lambda表达式如何被调用？**
+
+**lambda(参数)     即可**
+
+
+
+  1.捕获列表[]：捕获一定范围内的变量
+
+  2.参数列表():   和普通函数的参数列表一样，没有参数列表可以省略不写
+
+```c++
+auto f = [](){return 1;} //没有参数，参数列表为空
+//也可以这样写
+auto f = []{return 1;}//没有参数，参数列表省略不写
+```
+
+  3.opt选项，不需要可以省略
+
+* mutable ：可以修改按值传递进来的拷贝(修改拷贝，而不是值本身)		
+* exception: 指定函数抛出的异常
+
+4. 返回值类型：在C++11中，lambda表达式的返回值是通过**返回值后置语法**来定义的
+5. 函数体
+
+
+
+### 14.2 捕获列表
+
+lambda 表达式的捕获列表可以捕获一定范围内的变量，具体使用方法如下：
+
+* [] 不捕获任何变量;
+* [&] 捕获外部作用域中所有变量，并作为引用在函数体内使用(**按引用捕获**)
+* [=] 捕获外部作用域中所有变量，并作为副本在函数体内使用(**按值捕获**)
+  * 拷贝的副本在匿名函数体内部是**只读**的
+* [=,&foo] -按值捕获外部作用域所有变量，并**按引用捕获foo**
+* [bar]  只**按值捕获bar**
+* [&bar]  **按引用捕获bar**
+* [this] 捕获当前类中的this指针
+  * 让lambda表达式拥有和当前类成员函数相同的访问权限
+  * 如果已经使用了&或者= ,默认添加此选项
+
+栗子：
+
+```c++
+#include <iostream>
+#include <functional>
+using namespace std;
+
+class Test{
+public:
+    void output(int x,int y){
+       	//定义并保存给x  调用需要写： x1(),x2(),.....
+        auto x1 = []{return m_number;};  //error 没捕获到任何变量
+        auto x2 = [=]{return m_number+x+y;}; //正确 ，以拷贝值捕获到外部所有变量
+        auto x3 = [&]{return m_number+x+y;}; //正确 ，以引用捕获到外部所有变量
+        auto x4 = [this]{return m_number;};	 //正确，捕获到当前类的this指针，可以访问对象内部成员函数和成员变量
+        auto x5 = [this]{return m_number+x+y;};//错误，this指针只能捕获到对象的成员函数和成员方法，得不到x,y值
+        auto x6 = [this,x,y]{return m_number+x+y;};//正确，捕获到当前类的this指针，可以访问内部成员变量，并按值拷贝得到x,y
+        auto x7 = [this]{return m_number++;}; //正确
+    }
+    int m_number = 100;
+}
+```
+
+
+
+### 14.3 返回值类型
+
+很多时候 ,lambda表达式的返回值类型是非常明显的，因此在C++11中允许忽略lambda表达式的返回值
+
+```c++
+//完整的lambda表达式
+auto f = [](int a) -> int {		//int f = 11;
+    return a+10;}(1);		
+}
+
+//忽略返回值类型的lambda表达式
+auto f = [](int a){				//int f = 11;
+    return a+10;}(1);
+}
+```
+
+
+
+但是初始化列表不能用于返回值的自动推导
+
+```c++
+auto f1 = [](){			//error
+    return {1,2};		//初始化列表能初始化的类型有很多 比如{1,2}可以是一个数组，可以是一个结构体，有两个成员1,2等等等等。
+}
+```
+
+
+
+
+
+### 14.4 函数本质
+
+lambda表达式本质是一个仿函数
+
+为什么通过值拷贝的方式捕获的外部变量是只读的：
+
+因为在C++标准中，lambda表达式的operator()默认是const的，一个const成员函数是无法修改成员变量的值的
+
+mutable选项的作用就在于取消operator()的const属性。
+
+
+
+并且，lambda表达式是一个仿函数，可以使用```function和bind```来储存和操作lambda表达式
+
+
+
+
+
+## 15. 右值和右值引用
+
+### 15.1 左值和右值
+
+C++11新增加了一个类型，称之为右值引用(R-value reference),标记为**&&**,在介绍右值引用之前先要了解什么是左值和右值：
+
+* lvalue 是 loactor value，rvalue 是read value 的缩写
+* 左值是指存储在内存中、有明确存储地址(可取地址)的数据;
+* 右值是不指向稳定内存地址的匿名值(不具名对象)，临时值，他的生命周期很短，通常是暂时性的。除字符串以外的**字面量**都是右值
+
+左右值判断小tips：但凡能取地址的就是个左值
+
+```c++
+int main(){
+    //左值
+    int num = 9; // num 是左值 内存开辟一块int类型的盒子，并把9存入进去，命名为num
+    //左值引用
+    int &a = num; //  a不占用额外的空间，是num的别名
+    
+    
+    //右值
+	//右值引用     //右值是不可取地址的数据值
+    int &&b = 8;	//右值引用&&
+    
+    
+    //常量右值引用
+    const int&& d = 6;
+    const int&& d = b;//error 右值引用只能通过右值进行初始化,也就是只能通过数据值初始化
+    
+    
+    //常量左值引用  //常量引用：引用的值不能被修改  	
+    const int& c = num; //可以引用左值
+    const int& d = a; 	//可以引用左值引用
+    const int& e = b; 	//可以引用右值引用
+    const int& f = c;   //可以引用常量左值引用 ， 也可以引用常量右值引用
+}
+```
+
+
+
+### 15.2 右值引用
+
+右值引用    就是   对一个右值进行引用的  类型，因为右值是匿名的，所以我们只能通过引用的方式找到他。
+
+**无论声明左值引用还是右值引用，都需要进行初始化，因为引用类型本身并不绑定所属对象的内存，只是该对象的一个别名**
+
+
+
+右值引用的作用：可以延长右值的生命周期
+
+
+
+```c++
+class Test{
+public:
+    Test():m_num(new int(100)){} //默认构造
+    
+    
+    Test(const Test& a):m_num(new int(*a.m_num)){} //**拷贝构造 会在堆内存中再开辟空间保存原对象中堆内存的数据
+	~Test(){
+        delete m_num;
+    }
+private:
+    int* m_num;
+}
+
+Test getObj(){
+    Test t_temp;			//**创建t对象 ，默认构造 
+    return t_temp;		
+}
+
+
+//++移动构造->复用其他对象中的资源(堆内存)   当前是m_num,浅拷贝 把这些创建好的堆内存中的数据量用右值引用的方式传递给被构造的对象，不用新开辟堆内存空间
+Test (Test&& a):m_num(a.m_num){
+    a.m_num = nullptr; //++防止a匿名对象被析构的时候，释放m_num指向的地址
+}
+//我们会发现：移动构造的时候，******可以访问到了匿名对象的堆内存指针m_num**** 怎么实现的呢？
+//Test&& a = getObj();   因为getObj()返回的对象是匿名的，用其他方式根本找不到这个返回的匿名对象的地址。他本来要销毁了，通过移动构造函数中的 a右值引用 得到了 该匿名对象。 
+
+
+int main(){
+    Test t = getObj(); //**拷贝构造，同时匿名的临时对象getObj()在执行完后销毁，析构
+    
+    
+    Test t = getObj();//++移动构造
+    
+    
+    //在进行赋值操作时，编译器会自动判断右边的对象是否为临时对象，如果是，优先调用移动构造函数。 如果不是，调用拷贝构造函数。
+    
+    
+    
+    
+
+    return 0;		   
+}					   //**执行完后析构t
+
+问题1：该过程（**过程）共计执行了怎样的构造和析构函数。
+
+问题2:引入移动构造函数（++过程）共计执行了怎样的构造和析构函数
+     
+```
+
+
+
+**拷贝构造的作用就是防止浅拷贝**， 比如说一个指针指向堆区的一片int型变量，浅拷贝完之后，A，B对象的指针都指向该内存地址，当A调用完析构的时候，会释放该内存，那么B中的指针指向该内存就会发生错误。
+
+**但是拷贝构造有问题：要把堆区的数据复制一份过去** 
+
+```c++
+Test getObj111(){
+			
+    return Test();		
+}
+    
+写法2:
+Test&& getObj222(){
+			
+    return Test();		
+}
+int main(){
+    //如果没有移动构造函数，使用右值引用初始化要求更高一些
+    //要求右侧是一个临时的不能被取地址的对象  
+    写法1：
+    Test&& a  = getObj111();
+    
+    
+}
+```
+
+
+
+**将亡值**
+
+**C++11中右值可以分为两种：纯右值和将亡值。**
+
+* **纯右值：非引用返回的临时变量、算数表达式产生的临时变量、原始字面量和lambda表达式**
+* **将亡值：与右值引用相关的表达式，如 Test&& 类型函数的返回值 、std::move的返回值等**
+
+
+
+### 15.3 && 的特性
+
+&&不是在所有情况下都表示右值引用(结合后面的万能引用看):
+
+
+
+如果是模板参数需要指定为T&& ，
+
+如果是自动类型推导需要指定为auto && 
+
+在这两种场景下&&被称为**未定引用类型**
+
+**传入的参数如果是右值，那么就是右值引用，否则就是左值引用   **
+
+
+
+注意: const T&& 表示右值引用，不是未定引用类型
+
+
+
+
+
+**总结**：
+
+* 左值和右值是独立于他们的类型的。右值引用类型可能是左值(具名化之后)也可能是右值(将亡值)。
+* 编译器会将已命名的右值引用视为左值，未命名的右值引用视为右值。
+* auto&& 或 参数模板类型自动推导的T&& 是一个未定引用类型，取决于初始化的值的类型。
+* 通过右值推导的 T&& 或者 auto&&得到的是一个右值引用类型，其他的都是左值引用类型
+
+
+
+## 16. move  转移
+
+**move的作用:使用std::move方法可以将左值转换为右值**  
+
+**move(左值) **返回的是一个**将亡值**
+
+它和移动构造函数一样都具有移动语义，将**对象的状态或者所有权从一个对象转移到另一个对象**，只是转移，没有拷贝
+
+使用场景：
+
+```c++
+class Test{
+    Test():m_num(10){}
+    int* m_num;
+};	
+
+getObj(){
+    return Test();		//临时对象，右值
+}
+
+int main(){
+    Test aaa;
+    Test&& a= getObj(); //a是个右值引用
+    Test&& b = a; 		 //失败，a被具名化之后是一个左值，不能被右值引用
+    Test&& b = move(a); //正确，将a转换为了一个右值，可以被右值引用了
+    Test&& c = move(aaa); //正确,将左值aaa转换为了右值，可以被右值引用了
+    
+    ***总结：第一个功能：move可以进行右值引用的初始化
+        
+        
+   	Test d; 
+    coding......
+   	//d不需要了，但是要把d的值保留下来:方法1 拷贝构造，方法2 移动构造(但是移动构造只能构造右值)
+   	Test&& f = move(d);//把d转换为右值，进行移动构造。这样可以减少拷贝的次数。
+    
+    ***总结：第二个功能：move可以用来转移对象的资源
+}
+```
+
+## 17. forward 完美转发
+
+
+
+右值引用的类型是独立于值的，即一个右值引用作为函数参数的形参时，在函数内部转发该参数给其他内部函数，时他就变成了一个左值。**如果要按照参数原来的类型转发给另一个函数，可以使用std::forward()函数，该函数实现的功能称之为完美转发**
+
+形式：
+
+```c++
+std::forward<T>(t);
+```
+
+**当T为左值引用时，t将会被转换成T类型的左值**
+
+**当T不是左值引用时，t将会被转换为T类型的右值**
+
+
+
+练习：判断下列输出的哪些是左值哪些是右值
+
+```c++
+template<typename T>
+void printValue(T& t){
+    cout<<"l_value"<<t<<endl;
+}
+
+template<typename T>
+void printValue(T&& t){
+    cout<<"r_value"<<t<<endl;
+}
+
+template<typename T>
+void testForward(T&& v){
+    printValue(v);				//	左	左	左	左	左
+    printValue(move(v));		//	右	右	右	右	右
+    printValue(forward<T>(v));	//	右	左	右	左	右
+}
+
+int main(){
+    testForward(520);
+    int num = 1314;
+    testForward(num);
+    testForward(forward<int>(num));
+    testForward(forward<int&>(num));
+    testForward(forward<int&&>(num));
+    
+    return 0;
+}
+```
 
 
 
@@ -10570,7 +11389,6 @@ string s="abcdefg";
 string s1=s.substr(1,3);   //bcd
 string s2=s.substr(4);     //efg
 ```
-
 
 
 
