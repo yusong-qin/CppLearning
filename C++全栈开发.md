@@ -11202,6 +11202,786 @@ int main(){
 }
 ```
 
+## 18.智能指针
+
+在C++中没有垃圾回收机制，需要自己释放分配的内存(new->delete   malloc->free  区别是 delete 和new 会自动调用构造/析构函数)，否则就会造成内存泄漏。解决这个问题的有效方法是使用**智能指针**。
+
+智能指针是 存储  指向动态分配(堆)对象的指针  的类，用于生命周期的控制，能确保在离开指针作用域时，自动销毁动态分配的对象，防止内存泄漏。
+
+**原理**：引用计数。
+
+每使用他一次，内部的引用计数+1。
+
+每析构一次，内部的引用计数-1。
+
+内部引用计数减少到0时，删除所指的堆内存。
+
+
+
+C++11中提供了三种智能指针，使用智能指针需要引用头文件<**memory**>:
+
+```std::shared_ptr``` 共享的智能指针
+
+```std::unique_ptr``` 独占的智能指针   引用计数最大为1，即只有一个指针能管理该内存 
+
+```std::weak_ptr```:用来监视shared_ptr
+
+
+
+### 18.1 shared_ptr 共享智能指针
+
+#### 18.1.1 shared_ptr的初始化
+
+共享智能指针是指多个智能指针可以同时管理同一块有效的内存，共享智能指针shared_ptr 是一个模板类，如果要进行初始化有三种方式：
+
+**通过构造函数、拷贝构造函数和移动构造函数初始化、std::make_shared辅助函数以及reset方法。**
+
+```c++
+//构造函数
+std::shared_ptr<T> 智能指针名字(创建堆内存/或传入内存地址); //use_count = 1;
+//拷贝构造函数
+std::shared_ptr<T> 智能指针名字 = 另一个智能指针名字;//use_count +1 ;
+std::shared_ptr<T> 智能指针名字(另一个智能指针名字);//use_count +1;
+//移动构造函数
+std::shared_ptr<T> 智能指针名字(std::move(另一个智能指针名字));//use_conut 不变
+
+//make_shared
+std::shared_ptr<T> 智能指针名字 = std::make_shared<T>(构造函数的参数);
+```
+
+
+
+**1.通过构造函数初始化**
+
+```c++
+std::shared_ptr<T> 智能指针名字(创建堆内存/或传入内存地址);
+
+例如：
+std::shared_ptr<int> ptr1(new int(100));
+std::shared_ptr<int> ptr2;  //创建int型智能指针对象，不管理任何内存
+std::shared_ptr<char> ptr3(nullptr);//创建char型智能指针对象，初始化为空
+
+
+同时：.use_count()方法可以查看当前智能指针引用计数的个数
+如 ptr1.use_count()   //1
+```
+
+
+
+
+
+**2 通过拷贝和移动构造函数初始化**
+
+当一个智能指针被初始化之后，就可以通过这个智能指针初始化其他新对象。在创建新对象的时候，对应的拷贝构造函数或者移动构造函数就被自动调用了。
+
+```c++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+int main()
+{
+    // 使用智能指针管理一块 int 型的堆内存, 内部引用计数为 1
+    shared_ptr<int> ptr1(new int(520));
+    cout << "ptr1管理的内存引用计数: " << ptr1.use_count() << endl;
+    //调用拷贝构造函数
+    shared_ptr<int> ptr2(ptr1);
+    cout << "ptr2管理的内存引用计数: " << ptr2.use_count() << endl;
+    shared_ptr<int> ptr3 = ptr1;
+    cout << "ptr3管理的内存引用计数: " << ptr3.use_count() << endl;
+    //调用移动构造函数
+    shared_ptr<int> ptr4(std::move(ptr1));
+    cout << "ptr4管理的内存引用计数: " << ptr4.use_count() << endl;
+    std::shared_ptr<int> ptr5 = std::move(ptr2);
+    cout << "ptr5管理的内存引用计数: " << ptr5.use_count() << endl;
+
+    return 0;
+}
+
+```
+
+如果使用**拷贝**的方式初始化共享智能指针对象，这两个对象会同时管理同一块堆内存，堆内存对应的**引用计数也会增加**；如果使用**移动**的方式初始智能指针对象，只是转让了内存的所有权，管理内存的对象并不会增加，因此内存的**引用计数不会变化**。
+
+
+
+
+
+**3 通过std::make_shared初始化**
+
+通过C++提供的std::make_shared() 就可以完成内存对象的创建并将其初始化给智能指针，函数原型如下：
+
+```c++
+template< class T, class... Args >
+shared_ptr<T> make_shared(Args&&... args );
+```
+
+例子：
+
+```c++
+#include <iostream>
+#include <string>
+#include <memory>
+using namespace std;
+
+class Test
+{
+public:
+    Test() 
+    {
+        cout << "construct Test..." << endl;
+    }
+    Test(int x) 
+    {
+        cout << "construct Test, x = " << x << endl;
+    }
+    Test(string str) 
+    {
+        cout << "construct Test, str = " << str << endl;
+    }
+    ~Test()
+    {
+        cout << "destruct Test ..." << endl;
+    }
+};
+
+int main()
+{
+    // 使用智能指针管理一块 int 型的堆内存, 内部引用计数为 1
+    shared_ptr<int> ptr1 = make_shared<int>(520);
+    cout << "ptr1管理的内存引用计数: " << ptr1.use_count() << endl;
+
+    
+    shared_ptr<Test> ptr2 = make_shared<Test>();//默认构造
+    cout << "ptr2管理的内存引用计数: " << ptr2.use_count() << endl;
+
+    shared_ptr<Test> ptr3 = make_shared<Test>(520);//有参构造
+    cout << "ptr3管理的内存引用计数: " << ptr3.use_count() << endl;
+
+    shared_ptr<Test> ptr4 = make_shared<Test>("我是要成为海贼王的男人!!!");//有参构造
+    cout << "ptr4管理的内存引用计数: " << ptr4.use_count() << endl;
+    return 0;
+}
+
+```
+
+​		用std::make_shared()模板函数可以完成内存地址的创建，并将最终得到的内存地址传递给共享智能指针对象管理。如果申请的内存是普通类型，通过函数的（）可完成地址的初始化，**如果要创建一个类对象，make_shard函数的（）内部需要指定构造对象需要的参数，也就是类中构造函数的参数**。
+
+
+
+
+
+**4 通过reset()初始化（或者叫重设比较好一点）**
+
+
+
+```c++
+shared_ptr<int> ptr1(new int(10));
+shared_ptr<int> ptr2;
+				   // 为什么下面说的这么繁琐，因为智能指针实际上不是指针，而是一个对象，其中也有能直接视作指针的 ->的操作符重载。
+ptr1.reset(new int(10)); //把ptr1重设成指向一个  保存了int类型10的堆地址  的  对象；
+ptr1.reset();	   // 把ptr1重设成不指向任何数。
+
+```
+
+**1.5 获取原始指针**
+
+通过智能指针可以管理一个普通变量或者对象的地址，此时原始地址就不可见了。当我们想要**修改变量或者对象中的值**的时候，就需要**从智能指针对象中先取出数据的原始内存的地址**再操作，解决方案是调用共享智能指针类提供的**get()**方法。
+
+#### 18.1.2 shared_ptr 使用
+
+```c++ 
+两种方法：
+1.获取原始指针
+Test *t = ptr.get();
+t->setValue(1000);
+t->......
+    
+2.使用智能指针充当指针(智能指针内部重载->操作符实现)
+ptr->setValue(1000);
+ptr->.....
+```
+
+#### 18.1.3 shared_ptr 指定删除器
+
+当智能指针管理的内存对应的**引用计数变为0的时候，这块内存就会被智能指针析构掉了**。另外，我们在初始化智能指针的时候也可以**自己指定删除动作**，这个删除操作对应的函数被称之为**删除器**，这个删除器函数本质是一个**回调函数**，我们只需要进行实现，其调用是由智能指针完成的。
+
+```c++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+// 自定义删除器函数，释放int型内存
+void deleteIntPtr(int* p)
+{
+    delete p;
+    cout << "int 型内存被释放了...";
+}
+
+int main()
+{
+    shared_ptr<int> ptr(new int(250), deleteIntPtr);
+    return 0;
+}
+
+删除器函数也可以是lambda表达式，因此代码也可以写成下面这样：
+int main()
+{
+    shared_ptr<int> ptr(new int(250), [](int* p) {delete p; });
+    return 0;
+}
+```
+
+在上面的代码中，lambda表达式的参数就是智能指针管理的内存的地址，有了这个地址之后函数体内部就可以完成删除操作了。
+
+
+
+### 18.2 unique_str 独占智能指针
+
+std::unique_ptr是一个独占型的智能指针，它不允许其他的智能指针共享其内部的指针，可以通过它的构造函数初始化一个独占智能指针对象，但是**不允许通过赋值将一个unique_ptr赋值给另一个unique_ptr**。
+
+```c++
+// 通过构造函数初始化对象
+unique_ptr<int> ptr1(new int(10));
+// error, 不允许将一个unique_ptr赋值给另一个unique_ptr
+unique_ptr<int> ptr2 = ptr1;
+```
+
+std::unique_ptr不允许复制，但是可以通过函数返回给其他的std::unique_ptr，还可以通过std::move来转移给其他的std::unique_ptr，这样原始指针的所有权就被转移了，这个原始指针还是被独占的。**将亡值**
+
+```C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+unique_ptr<int> func()
+{
+    return unique_ptr<int>(new int(520));
+}
+
+int main()
+{
+    // 通过构造函数初始化
+    unique_ptr<int> ptr1(new int(10));
+    // 通过转移所有权的方式初始化
+    unique_ptr<int> ptr2 = move(ptr1);
+    unique_ptr<int> ptr3 = func();
+
+    return 0;
+}
+```
+
+unique_ptr独占智能指针类也有一个**reset方法**,可以让unique_ptr**解除对原始内存的管理**，也可以用来**初始化一个独占的智能指针**：
+
+```c++
+int main()
+{
+    unique_ptr<int> ptr1(new int(10));
+    unique_ptr<int> ptr2 = move(ptr1);
+
+    ptr1.reset();	//ptr1.reset();解除对原始内存的管理
+    ptr2.reset(new int(250));
+	//ptr2.reset(new int(250));重新指定智能指针管理的原始内存
+    return 0;
+}
+
+```
+
+如果想要获取独占智能指针管理的原始地址，可以调用get()方法:
+
+```c++
+int main()
+{
+    unique_ptr<int> ptr1(new int(10));
+    unique_ptr<int> ptr2 = move(ptr1);
+
+    ptr2.reset(new int(250));
+    cout << *ptr2.get() << endl;	// 得到内存地址中存储的实际数值 250
+
+    return 0;
+}
+
+```
+
+#### 18.2.2unique_ptr 删除器(一般不用删除器，作用域结束自动析构)
+
+unique_ptr指定删除器和shared_ptr指定删除器是有区别的，unique_ptr指定删除器的时候需要确定删除器的类型，所以不能像shared_ptr那样直接指定删除器，举例说明：
+
+```c++
+shared_ptr<int> ptr1(new int(10), [](int*p) {delete p; });	// ok
+unique_ptr<int> ptr1(new int(10), [](int*p) {delete p; });	// error
+
+int main()
+{
+    using func_ptr = void(*)(int*);
+    unique_ptr<int, func_ptr> ptr1(new int(10), [](int*p) {delete p; });
+
+    return 0;
+}
+```
+
+
+
+### 18.3 weak_ptr 弱引用智能指针
+
+弱引用智能指针`std::weak_ptr`可以看做是`shared_ptr`的助手，它不管理`shared_ptr`内部的指针。`std::weak_ptr`没有重载操作符`*`和`->`，因为它不共享指针，不能操作资源，所以它的构造不会增加引用计数，析构也不会减少引用计数，它的主要作用就是作为一个旁观者监视`shared_ptr`中管理的资源是否存在。
+
+#### 18.3.1 初始化
+
+```c++
+// 默认构造函数  构造个空的
+constexpr weak_ptr() noexcept;
+// 拷贝构造		 拷贝其他弱引用指针
+weak_ptr (const weak_ptr& x) noexcept;
+template <class U> weak_ptr (const weak_ptr<U>& x) noexcept;
+// 通过shared_ptr对象构造    指向一个共享指针
+template <class U> weak_ptr (const shared_ptr<U>& x) noexcept;
+```
+
+在C++11中，`weak_ptr`的初始化可以通过以上提供的构造函数来完成初始化，具体使用方法如下：
+
+```c++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+int main() 
+{
+    shared_ptr<int> sp(new int);
+
+    weak_ptr<int> wp1;
+    weak_ptr<int> wp2(wp1);
+    weak_ptr<int> wp3(sp);
+    weak_ptr<int> wp4;
+    wp4 = sp;
+    weak_ptr<int> wp5;
+    wp5 = wp3;
+    
+    return 0;
+}
+```
+
+- `weak_ptr<int> wp1;`构造了一个空`weak_ptr`对象
+- `weak_ptr<int> wp2(wp1);`通过一个空`weak_ptr`对象构造了另一个空`weak_ptr`对象
+- `weak_ptr<int> wp3(sp);`通过一个`shared_ptr`对象构造了一个可用的`weak_ptr`实例对象
+- `wp4 = sp;`通过一个`shared_ptr`对象构造了一个可用的`weak_ptr`实例对象（这是一个隐式类型转换）
+- `wp5 = wp3;`通过一个`weak_ptr`对象构造了一个可用的`weak_ptr`实例对象
+
+
+
+#### 18.3.2 其他常用方法
+
+**use_count()**
+
+
+
+**expired()**
+
+通过调用`std::weak_ptr`类提供的`expired()`方法来判断观测的资源是否已经被释放，函数原型如下：
+
+```C++
+// 返回true表示资源已经被释放, 返回false表示资源没有被释放
+bool expired() const noexcept;
+```
+
+
+
+函数的使用方法如下:
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+int main() 
+{
+    shared_ptr<int> shared(new int(10));
+    weak_ptr<int> weak(shared);
+    cout << "1. weak " << (weak.expired() ? "is" : "is not") << " expired" << endl;
+
+    shared.reset();
+    cout << "2. weak " << (weak.expired() ? "is" : "is not") << " expired" << endl;
+
+    return 0;
+}
+```
+
+测试代码输出的结果:
+
+```C++
+C++
+1. weak is not expired
+2. weak is expired
+```
+
+`weak_ptr`监测的就是`shared_ptr`管理的资源，当共享智能指针调用`shared.reset();`之后管理的资源被释放，因此`weak.expired()`函数的结果返回`true`，表示监测的资源已经不存在了。
+
+**lock()**
+
+通过调用`std::weak_ptr`类提供的`lock()`方法来获取管理所监测资源的`shared_ptr`对象，函数原型如下：
+
+```C++
+C++
+shared_ptr<element_type> lock() const noexcept;
+```
+
+函数的使用方法如下:
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+int main()
+{
+    shared_ptr<int> sp1, sp2;
+    weak_ptr<int> wp;
+
+    sp1 = std::make_shared<int>(520);
+    wp = sp1;
+    sp2 = wp.lock();
+    cout << "use_count: " << wp.use_count() << endl;
+
+    sp1.reset();
+    cout << "use_count: " << wp.use_count() << endl;
+
+    sp1 = wp.lock();
+    cout << "use_count: " << wp.use_count() << endl;
+
+    cout << "*sp1: " << *sp1 << endl;
+    cout << "*sp2: " << *sp2 << endl;
+
+    return 0;
+}
+```
+
+测试代码输出的结果为:
+
+```C++
+C++
+use_count: 2
+use_count: 1
+use_count: 2
+*sp1: 520
+*sp2: 520
+```
+
+- `sp2 = wp.lock();`通过调用`lock()`方法得到一个用于管理`weak_ptr`对象所监测的资源的共享智能指针对象，使用这个对象初始化`sp2`，此时所监测资源的引用计数为`2`
+- `sp1.reset();`共享智能指针sp1被重置，`weak_ptr`对象所监测的资源的引用计数减1
+- `sp1 = wp.lock();`sp1重新被初始化，并且管理的还是`weak_ptr`对象所监测的资源，因此引用计数加1
+- 共享智能指针对象`sp1`和`sp2`管理的是同一块内存，因此最终打印的内存中的结果是相同的，都是520
+
+**reset()**
+
+通过调用`std::weak_ptr`类提供的`reset()`方法来清空对象，使其不监测任何资源，函数原型如下：
+
+```C++
+C++
+void reset() noexcept;
+```
+
+函数的使用是非常简单的，示例代码如下：
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+int main() 
+{
+    shared_ptr<int> sp(new int(10));
+    weak_ptr<int> wp(sp);
+    cout << "1. wp " << (wp.expired() ? "is" : "is not") << " expired" << endl;
+
+    wp.reset();
+    cout << "2. wp " << (wp.expired() ? "is" : "is not") << " expired" << endl;
+
+    return 0;
+}
+```
+
+测试代码输出的结果为:
+
+```C++
+C++
+1. wp is not expired
+2. wp is expired
+weak_ptr`对象`sp`被重置之后`wp.reset();`变成了空对象，不再监测任何资源，因此`wp.expired()`返回`true
+```
+
+#### 18.3.3 返回管理this的shared_ptr
+
+如果在一个类中编写了一个函数，通过这个得到管理当前对象的共享智能指针，我们可能会写出如下代码：
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+struct Test
+{
+    shared_ptr<Test> getSharedPtr()
+    {
+        return shared_ptr<Test>(this);
+    }
+    
+    ~Test()
+    {
+        cout << "class Test is disstruct ..." << endl;
+    }
+
+};
+
+int main() 
+{
+    shared_ptr<Test> sp1(new Test);
+    cout << "use_count: " << sp1.use_count() << endl;
+    shared_ptr<Test> sp2 = sp1->getSharedPtr();
+    cout << "use_count: " << sp1.use_count() << endl;
+    return 0;
+}
+```
+
+执行上面的测试代码，运行中会出现异常，在终端还是能看到对应的日志输出：
+
+```C++
+C++
+use_count: 1
+use_count: 1
+class Test is disstruct ...
+class Test is disstruct ...
+```
+
+通过输出的结果可以看到`一个对象被析构了两次`，其原因是这样的：在这个例子中使用同一个指针`this`构造了两个智能指针对象`sp1`和`sp2`，这二者之间是没有任何关系的，因为`sp2`并不是通过`sp1`初始化得到的实例对象。在离开作用域之后`this`将被构造的两个智能指针各自析构，导致重复析构的错误。
+
+这个问题可以通过`weak_ptr`来解决，通过`wek_ptr`返回管理`this`资源的共享智能指针对象`shared_ptr`。C++11中为我们提供了一个模板类叫做`std::enable_shared_from_this<T>`，这个类中有一个方法叫做`shared_from_this()`，通过这个方法可以返回一个共享智能指针，在函数的内部就是使用`weak_ptr`来监测`this`对象，并通过调用`weak_ptr`的`lock()`方法返回一个`shared_ptr`对象。
+
+修改之后的代码为：
+
+```C++ 
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+struct Test : public enable_shared_from_this<Test>
+{
+    shared_ptr<Test> getSharedPtr()
+    {
+        return shared_from_this();
+    }
+    ~Test()
+    {
+        cout << "class Test is disstruct ..." << endl;
+    }
+};
+
+int main() 
+{
+    shared_ptr<Test> sp1(new Test);
+    cout << "use_count: " << sp1.use_count() << endl;
+    shared_ptr<Test> sp2 = sp1->getSharedPtr();
+    cout << "use_count: " << sp1.use_count() << endl;
+    return 0;
+}
+```
+
+测试代码输出的结果为:
+
+```C++
+C++
+use_count: 1
+use_count: 2
+class Test is disstruct ...
+```
+
+最后需要强调一个细节：在调用enable_shared_from_this类的shared_from_this()方法之前，必须要先初始化函数内部weak_ptr对象，否则该函数无法返回一个有效的shared_ptr对象（具体处理方法可以参考上面的示例代码）。
+
+#### 18.3.4 解决循环引用问题
+
+智能指针如果循环引用会导致内存泄露，比如下面的例子：
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+struct TA;
+struct TB;
+
+struct TA
+{
+    shared_ptr<TB> bptr;
+    ~TA()
+    {
+        cout << "class TA is disstruct ..." << endl;
+    }
+};
+
+struct TB
+{
+    shared_ptr<TA> aptr;
+    ~TB()
+    {
+        cout << "class TB is disstruct ..." << endl;
+    }
+};
+
+void testPtr()
+{
+    shared_ptr<TA> ap(new TA);
+    shared_ptr<TB> bp(new TB);
+    cout << "TA object use_count: " << ap.use_count() << endl;
+    cout << "TB object use_count: " << bp.use_count() << endl;
+
+    ap->bptr = bp;
+    bp->aptr = ap;
+    cout << "TA object use_count: " << ap.use_count() << endl;
+    cout << "TB object use_count: " << bp.use_count() << endl;
+}
+
+int main()
+{
+    testPtr();
+    return 0;
+}
+```
+
+测试程序输出的结果如下:
+
+```
+C++
+TA object use_count: 1
+TB object use_count: 1
+TA object use_count: 2
+TB object use_count: 2
+```
+
+在测试程序中，共享智能指针`ap`、`bp`对`TA`、`TB`实例对象的引用计数变为2，`在共享智能指针离开作用域之后引用计数只能减为1`，这种情况下不会去删除智能指针管理的内存，导致类`TA`、`TB`的实例对象不能被析构，最终造成内存泄露。通过使用`weak_ptr`可以解决这个问题，只要将类`TA`或者`TB`的任意一个成员改为`weak_ptr`，修改之后的代码如下：
+
+```C++
+C++
+#include <iostream>
+#include <memory>
+using namespace std;
+
+struct TA;
+struct TB;
+
+struct TA
+{
+    weak_ptr<TB> bptr;
+    ~TA()
+    {
+        cout << "class TA is disstruct ..." << endl;
+    }
+};
+
+struct TB
+{
+    shared_ptr<TA> aptr;
+    ~TB()
+    {
+        cout << "class TB is disstruct ..." << endl;
+    }
+};
+
+void testPtr()
+{
+    shared_ptr<TA> ap(new TA);
+    shared_ptr<TB> bp(new TB);
+    cout << "TA object use_count: " << ap.use_count() << endl;
+    cout << "TB object use_count: " << bp.use_count() << endl;
+
+    ap->bptr = bp;
+    bp->aptr = ap;
+    cout << "TA object use_count: " << ap.use_count() << endl;
+    cout << "TB object use_count: " << bp.use_count() << endl;
+}
+
+int main()
+{
+    testPtr();
+    return 0;
+}
+```
+
+程序输出的结果:
+
+```C++
+C++
+TA object use_count: 1
+TB object use_count: 1
+TA object use_count: 2
+TB object use_count: 1
+class TB is disstruct ...
+class TA is disstruct ...
+```
+
+通过输出的结果可以看到类`TA`或者`TB`的对象被成功析构了。
+
+上面程序中，在对类`TA`成员赋值时`ap->bptr = bp;`由于`bptr`是`weak_ptr`类型，这个赋值操作并不会增加引用计数，所以`bp`的引用计数仍然为1，在离开作用域之后`bp`的引用计数减为0，类`TB`的实例对象被析构。
+
+在类`TB`的实例对象被析构的时候，内部的`aptr`也被析构，其对`TA`对象的管理解除，内存的引用计数减为1，当共享智能指针`ap`离开作用域之后，对`TA`对象的管理也解除了，内存的引用计数减为0，类`TA`的实例对象被析构。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
