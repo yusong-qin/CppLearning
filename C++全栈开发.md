@@ -11930,37 +11930,405 @@ class TA is disstruct ...
 
 
 
+# Linux网络编程
+
+## 1.网络基础概念
+
+
+
+### 1.1 七层网络模型VS四层网络模型
+
+七层网络模型          VS          四层网络模型![](images\ip四层协议模型.png)
+
+
+
+### 1.2 TCP、UDP协议——传输层协议
+
+TCP——可靠的、有连接的、流式传输
+
+![](C:\Users\14862\Desktop\CppLearning\images\tcp.png)
+
+UDP——不可靠的、无连接的
+
+![](C:\Users\14862\Desktop\CppLearning\images\udp.png)
+
+
+
+### 1.3 IP协议——网络层协议
+
+![](C:\Users\14862\Desktop\CppLearning\images\ip.png)
+
+
+
+### 1.4 数据封装
+
+![](C:\Users\14862\Desktop\CppLearning\images\1558001080021.png)
+
+
+
+## 2.socket 套接字
+
+套接字对程序员来说就是一套**网络通信的接口**，使用这套接口就可以完成网络通信。网络通信的主体主要分为两部分：**客户端和服务器端**。在客户端和服务器通信的时候需要频繁提到三个概念：**IP、端口、通信数据**。
+
+**TCP通信流程**
+
+![](C:\Users\14862\Desktop\CppLearning\images\tcp.jpg)
+
+### 2.1 字节序
+
+字节序，顾名思义字节的顺序，就是大于一个字节类型的数据在内存中的存放顺序，也就是说对于单字符来说是没有字节序问题的，字符串是单字符的集合，因此字符串也没有字节序问题。
+
+
+
+**Little-Endian -> 主机字节序 (小端)**
+
+数据的低位字节存储到内存的低地址位, 数据的高位字节存储到内存的高地址位
+我们使用的PC机，数据的存储默认使用的是小端
+
+
+
+**Big-Endian -> 网络字节序 (大端)**
+
+数据的低位字节存储到内存的高地址位, 数据的高位字节存储到内存的低地址位
+套接字通信过程中操作的数据都是大端存储的，包括：接收/发送的数据、IP地址、端口。
+
+
+
+### 2.2 IP地址转换
+
+虽然IP地址本质是一个整形数，但是在使用的过程中都是通过一个字符串来描述，下面的函数描述了如何将一个字符串类型的IP地址进行大小端转换：
+
+**主机->网络**
+
+```c
+// 主机字节序的IP地址转换为网络字节序
+// 主机字节序的IP地址是字符串, 网络字节序IP地址是整形
+int inet_pton(int af, const char *src, void *dst); 
+```
+
+参数:
+
+* af: 地址族(IP地址的家族包括ipv4和ipv6)协议
+  * AF_INET: ipv4格式的ip地址
+  * AF_INET6: ipv6格式的ip地址
+* src: 传入参数, 对应要转换的点分十进制的ip地址: 192.168.1.100
+* dst: 传出参数, 函数调用完成, 转换得到的大端整形IP被写入到这块内存中
+  返回值：成功返回1，失败返回0或者-1
+
+
+
+**网络->主机**
+
+```c
+#include <arpa/inet.h>
+// 将大端的整形数, 转换为小端的点分十进制的IP地址        
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+```
+
+参数:
+
+* af: 地址族协议
+  * AF_INET: ipv4格式的ip地址
+  * AF_INET6: ipv6格式的ip地址
+* src: 传入参数, 这个指针指向的内存中存储了大端的整形IP地址
+* dst: 传出参数, 存储转换得到的小端的点分十进制的IP地址
+* size: 修饰dst参数的, 标记dst指向的内存中最多可以存储多少个字节
+* 返回值:
+  * 成功: 指针指向第三个参数对应的内存地址, 通过返回值也可以直接取出转换得到的IP字符串
+  * 失败: NULL
+
+
+
+### 2.3 sockaddr 和sockaddr_in 数据结构
+
+```c
+// 在写数据的时候不好用
+struct sockaddr {
+	sa_family_t sa_family;       // 地址族协议, ipv4
+	char        sa_data[14];     // 端口(2字节) + IP地址(4字节) + 填充(8字节)
+}
+
+typedef unsigned short  uint16_t;
+typedef unsigned int    uint32_t;
+typedef uint16_t in_port_t;
+typedef uint32_t in_addr_t;
+typedef unsigned short int sa_family_t;
+#define __SOCKADDR_COMMON_SIZE (sizeof (unsigned short int))
+
+struct in_addr
+{
+    in_addr_t s_addr;
+};  
+
+// sizeof(struct sockaddr) == sizeof(struct sockaddr_in)
+// 一般写数据都用这个，再强制类型转换成 sockaddr类型 (*sockaddr)&xxx
+struct sockaddr_in
+{
+    sa_family_t sin_family;		/* 地址族协议: AF_INET */
+    in_port_t sin_port;         /* 端口, 2字节-> 大端  */
+    struct in_addr sin_addr;    /* IP地址, 4字节 -> 大端  */
+    /* 填充 8字节 */
+    unsigned char sin_zero[sizeof (struct sockaddr) - sizeof(sin_family) -
+               sizeof (in_port_t) - sizeof (struct in_addr)];
+};  
+
+```
 
 
 
 
 
+### 2.4 文件描述符
+
+![](C:\Users\14862\Desktop\CppLearning\images\1558084711685.png)
+
+​					服务器端															客户端
 
 
 
+文件描述符对应的内存结构：
+
+* 一个文件文件描述符对应两块内存, 一块内存是读缓冲区, 一块内存是写缓冲区
+* 读数据: 通过文件描述符将内存中的数据读出, 这块内存称之为读缓冲区
+* 写数据: 通过文件描述符将数据写入到某块内存中, 这块内存称之为写缓冲区
+
+监听的文件描述符:
+
+* 客户端的连接请求会发送到服务器端监听的文件描述符的读缓冲区中
+* 读缓冲区中有数据, 说明有新的客户端连接
+* 调用accept()函数, 这个函数会检测监听文件描述符的读缓冲区
+  * 检测不到数据, 该函数阻塞
+  * 如果检测到数据, 解除阻塞, 新的连接建立
+
+通信的文件描述符:
+
+* 客户端和服务器端都有通信的文件描述符
+* 发送数据：调用函数 write() / send()，数据进入到内核中
+  * 数据并没有被发送出去, 而是将数据写入到了通信的文件描述符对应的写缓冲区中
+  * 内核检测到通信的文件描述符写缓冲区中有数据, 内核会将数据发送到网络中
+
+* 接收数据: 调用的函数 read() / recv(), 从内核读数据
+  * 数据如何进入到内核程序猿不需要处理, 数据进入到通信的文件描述符的读缓冲区中
+  * 数据进入到内核, 必须使用通信的文件描述符, 将数据从读缓冲区中读出即可
+
+### 2.5 基于tcp通信的服务器端代码实现
+
+![](C:\Users\14862\Desktop\CppLearning\images\tcp.jpg)
+
+```c
+// server.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
+
+int main()
+{
+    // 1. 创建监听的套接字
+    int lfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(lfd == -1)
+    {
+        perror("socket");
+        exit(0);
+    }
+
+    // 2. 将socket()返回值和本地的IP端口绑定到一起
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(10000);   // 大端端口
+    // INADDR_ANY代表本机的所有IP, 假设有三个网卡就有三个IP地址
+    // 这个宏可以代表任意一个IP地址
+    // 这个宏一般用于本地的绑定操作
+    addr.sin_addr.s_addr = INADDR_ANY;  // 这个宏的值为0 == 0.0.0.0
+//    inet_pton(AF_INET, "192.168.237.131", &addr.sin_addr.s_addr);
+    int ret = bind(lfd, (struct sockaddr*)&addr, sizeof(addr));
+    if(ret == -1)
+    {
+        perror("bind");
+        exit(0);
+    }
+
+    // 3. 设置监听
+    ret = listen(lfd, 128);
+    if(ret == -1)
+    {
+        perror("listen");
+        exit(0);
+    }
+
+    // 4. 阻塞等待并接受客户端连接
+    struct sockaddr_in cliaddr;
+    int clilen = sizeof(cliaddr);
+    int cfd = accept(lfd, (struct sockaddr*)&cliaddr, &clilen);
+    if(cfd == -1)
+    {
+        perror("accept");
+        exit(0);
+    }
+    // 打印客户端的地址信息
+    char ip[24] = {0};
+    printf("客户端的IP地址: %s, 端口: %d\n",
+           inet_ntop(AF_INET, &cliaddr.sin_addr.s_addr, ip, sizeof(ip)),
+           ntohs(cliaddr.sin_port));
+
+    // 5. 和客户端通信
+    while(1)
+    {
+        // 接收数据
+        char buf[1024];
+        memset(buf, 0, sizeof(buf));
+        int len = read(cfd, buf, sizeof(buf));
+        if(len > 0)
+        {
+            printf("客户端say: %s\n", buf);
+            write(cfd, buf, len);
+        }
+        else if(len  == 0)
+        {
+            printf("客户端断开了连接...\n");
+            break;
+        }
+        else
+        {
+            perror("read");
+            break;
+        }
+    }
+
+    close(cfd);
+    close(lfd);
+
+    return 0;
+}
+
+```
 
 
 
+### 2.6 基于tcp通信的客户端代码实现
+
+```c
+// client.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
+
+int main()
+{
+    // 1. 创建通信的套接字
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(fd == -1)
+    {
+        perror("socket");
+        exit(0);
+    }
+
+    // 2. 连接服务器
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(10000);   // 大端端口
+    inet_pton(AF_INET, "192.168.237.131", &addr.sin_addr.s_addr);
+
+    int ret = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
+    if(ret == -1)
+    {
+        perror("connect");
+        exit(0);
+    }
+
+    // 3. 和服务器端通信
+    int number = 0;
+    while(1)
+    {
+        // 发送数据
+        char buf[1024];
+        sprintf(buf, "你好, 服务器...%d\n", number++);
+        write(fd, buf, strlen(buf)+1);
+        
+        // 接收数据
+        memset(buf, 0, sizeof(buf));
+        int len = read(fd, buf, sizeof(buf));
+        if(len > 0)
+        {
+            printf("服务器say: %s\n", buf);
+        }
+        else if(len  == 0)
+        {
+            printf("服务器断开了连接...\n");
+            break;
+        }
+        else
+        {
+            perror("read");
+            break;
+        }
+        sleep(1);   // 每隔1s发送一条数据
+    }
+
+    close(fd);
+
+    return 0;
+}
+
+```
+
+## 3. IO多路复用
+
+### 3.1 IO多路复用VS多线程(多进程)
+
+IO多路转接也称为IO多路复用，它是一种网络通信的手段（机制），通过这种方式可以同时监测多个文件描述符并且这个过程是阻塞的，一旦检测到有文件描述符就绪（ 可以读数据或者可以写数据）程序的阻塞就会被解除，之后就可以基于这些（一个或多个）就绪的文件描述符进行通信了。通过这种方式**在单线程/进程的场景下也可以在服务器端实现并发**。常见的IO多路转接方式有：**select、poll、epoll**。
+
+下面先对多线程/多进程并发和IO多路转接的并发处理流程进行对比（服务器端）：
+
+多线程/多进程并发
+
+* 主线程/父进程：调用 accept()监测客户端连接请求
+  * 如果没有新的客户端的连接请求，当前线程/进程会阻塞
+  * 如果有新的客户端连接请求解除阻塞，建立连接
+* 子线程/子进程：和建立连接的客户端通信
+  * 调用 read() / recv() 接收客户端发送的通信数据，如果没有通信数据，当前线程/进程会阻塞，数据到达之后阻塞自动解除
+  * 调用 write() / send() 给客户端发送数据，如果写缓冲区已满，当前线程/进程会阻塞，否则将待发送数据写入写缓冲区中
+
+IO多路转接并发
+
+* 使用IO多路转接函数委托内核检测服务器端所有的文件描述符（通信和监听两类），这个检测过程会导致进程/线程的阻塞，如果检测到已就绪的文件描述符阻塞解除，并将这些已就绪的文件描述符传出
+
+* 根据类型对传出的所有已就绪文件描述符进行判断，并做出不同的处理
+
+  * 监听的文件描述符：和客户端建立连接
+    * 此时调用accept()是不会导致程序阻塞的，因为监听的文件描述符是已就绪的（有新请求）
+
+* 通信的文件描述符：调用通信函数和已建立连接的客户端通信
+
+  * 调用 read() / recv() 不会阻塞程序，因为通信的文件描述符是就绪的，读缓冲区内已有数据
+  * 调用 write() / send() 不会阻塞程序，因为通信的文件描述符是就绪的，写缓冲区不满，可以往里面写数据
+
+* 对这些文件描述符继续进行下一轮的检测（循环往复。。。）
+
+  
+
+与多进程和多线程技术相比，**I/O多路复用技术的最大优势是系统开销小**，系统不必创建进程/线程，也不必维护这些进程/线程，从而大大减小了系统的开销。
 
 
 
+多路复用三种方式：
+
+select、poll  —— 底层：线性表
+
+​	其中：select跨平台; poll epoll用于linux。select线性表容量1024
+
+epoll              —— 底层：红黑树、效率高
 
 
 
+重点：select——跨平台   epoll——效率高
 
+### 3.1 select 多路复用
 
-
-
-
-
-
-
-
-
-
-
-
-
+![](images\select - 副本.png)
 
 
 
