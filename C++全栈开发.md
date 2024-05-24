@@ -12885,7 +12885,7 @@ string s2=s.substr(4);     //efg
 
 ![image-20240502145909516](images\image-20240502145909516.png)
 
-### 2. CMAKE编译流程
+### 2. CMAKE构建流程
 
 ```cmake
 #g++		-o        server                        -g         muduo_server.cpp xxx.cpp   -l/usr/include           -l/usr/lib         -lmuduo_net -lmuduo_base -lphread 
@@ -12903,6 +12903,10 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
 # 5.配置库文件搜索路径
 #link_directories()
 
+#设置可执行文件最终存储的路径
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
+
 # 3.设置需要编译的源文件列表
 set(SRC_LIST muduo_server.cpp)
 # 把.指定路径下的所有源文件名字放入变量名SRC_LIST里面
@@ -12917,11 +12921,51 @@ target_link_libraries(server muduo_net muduo_base pthread)
 # 表示server这个目标程序，需要链接muduo_net muduo_base pthread 这三个库文件
 ```
 
+### 3. CMAKE 编译流程
+
+在包含CMakeLists.txt目录下打开命令行，执行`cmake .` 
+
+再执行`make`即可
 
 
 
+### 4. 项目文件整理
+
+如果直接在根目录下cmake很多中间文件会和项目文件杂糅在一起，通常情况下
+
+规范的C++文件目录整理：
+
+bin: 生成的可执行文件
+
+lib: 生成的中间库文件
+
+include: 头文件
+
+src：源文件
+
+build：编译产生的中间文件
+
+example：示例代码、测试文件
+
+thridparty：第三方库文件
+
+autobuild.sh：自动编译文件
+
+readme......
 
 
+
+因此:cmake编译应该如下操作
+
+`mkdir build`	     创建build文件夹
+
+`cd build`			   移动到build文件夹
+
+`cmake ..`			   在上一级目录中预编译项目
+
+`make`						编译
+
+![image-20240502163842669](images\image-20240502163842669.png)
 
 
 
